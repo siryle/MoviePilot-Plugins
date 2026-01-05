@@ -518,7 +518,7 @@ class mediaservermsgai(_PluginBase):
             message_title = f"🆕 {title_name} {action_text} {server_name}"
 
             # 内容构造
-            message_texts.append(f"⏰ {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
+            message_texts.append(f"⏰ 时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
             
             # 智能分类（优先使用CategoryHelper，fallback到路径解析）
             category = None
@@ -550,8 +550,9 @@ class mediaservermsgai(_PluginBase):
             if overview:
                 if len(overview) > self._overview_max_length:
                     overview = overview[:self._overview_max_length].rstrip() + "..."
-                message_texts.append("\n━━━━━━━━━━━━━━━━━━\n") 
-                message_texts.append(f"📖 剧情简介\n{overview}")
+                #message_texts.append("\n━━━━━━━━━━━━━━━━━━\n") 
+                #message_texts.append(f"📖 剧情简介\n{overview}")
+                message_texts.append(f"📖 简介：\n{overview}")
 
             # 图片
             if not image_url:
@@ -924,8 +925,8 @@ class mediaservermsgai(_PluginBase):
             texts.append(f"⭐️ 评分：{round(float(tmdb_info.vote_average), 1)}/10")
         
         region = self._get_region_text_cn(tmdb_info)
-        if region:
-            texts.append(f"🏳️ 地区：{region}")
+        #if region:
+            #texts.append(f"🏳️ 地区：{region}")
 
         if hasattr(tmdb_info, 'status') and tmdb_info.status:
             status_map = {'Ended': '已完结', 'Returning Series': '连载中', 'Canceled': '已取消', 'In Production': '制作中', 'Planned': '计划中', 'Released': '已上映', 'Continuing': '连载中'}
@@ -952,7 +953,7 @@ class mediaservermsgai(_PluginBase):
         if not tmdb_info: return
         if hasattr(tmdb_info, 'genres') and tmdb_info.genres:
             genres = [g.get('name') if isinstance(g, dict) else str(g) for g in tmdb_info.genres[:3]]
-            if genres: texts.append(f"🎭 类型：{'、'.join(genres)}")
+            #if genres: texts.append(f"🎭 类型：{'、'.join(genres)}")
         
         if hasattr(tmdb_info, 'actors') and tmdb_info.actors:
             actors = [a.get('name') if isinstance(a, dict) else str(a) for a in tmdb_info.actors[:3]]
