@@ -1378,6 +1378,7 @@ class SaMediaSyncDel(_PluginBase):
                 #title="媒体库同步删除任务完成",
                 title=f"🗑 {media_name}{year} 已删除",
                 image=backrop_image,
+                text="\n",
                 #text=f"{msg}\n"
                 text=f"⏰ 时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}\n"
                 #f"删除记录{len(transfer_history) if transfer_history else '0'}个\n"
