@@ -497,12 +497,12 @@ class mediaservermsgai(_PluginBase):
 
             # 标题构造
             title_name = event_info.item_name
-            if event_info.item_type in ["TV", "SHOW"] and event_info.json_object:
-                title_name = event_info.json_object.get('Item', {}).get('SeriesName') or title_name
+            #if event_info.item_type in ["TV", "SHOW"] and event_info.json_object:
+                #title_name = event_info.json_object.get('Item', {}).get('SeriesName') or title_name
             
-            year = tmdb_info.year if (tmdb_info and tmdb_info.year) else event_info.json_object.get('Item', {}).get('ProductionYear')
-            if year and str(year) not in title_name:
-                title_name += f" ({year})"
+            #year = tmdb_info.year if (tmdb_info and tmdb_info.year) else event_info.json_object.get('Item', {}).get('ProductionYear')
+            #if year and str(year) not in title_name:
+                #title_name += f" ({year})"
             
             action_base = self._webhook_actions.get(event_info.event, "通知")
             type_cn = "剧集" if event_info.item_type in ["TV", "SHOW"] else "电影"
@@ -519,7 +519,7 @@ class mediaservermsgai(_PluginBase):
                 #message_title = f"[{title_name}]({tmdb_url}) {action_text} {server_name}"
             #else:
                 #message_title = f"{title_name} {action_text} {server_name}"
-            message_title = f"🆕 {title_name} {action_text} {server_name}"
+            message_title = f"🆕 {title_name} {action_base}"
 
             # 内容构造
             #message_texts.append(f"⏰ {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
@@ -672,7 +672,7 @@ class mediaservermsgai(_PluginBase):
             #message_title = f"[{title_name}]({tmdb_url}) 已入库 (含{count}个文件) {server_name}"
         #else:
             #message_title = f"{title_name} 已入库 (含{count}个文件) {server_name}"
-        message_title = f"🆕 {title_name} 已入库 (含{count}个文件) {server_name}"
+        message_title = f"🆕 {title_name} 已入库 (含{count}个文件)"
 
         message_texts = []
         message_texts.append(f"⏰ {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
