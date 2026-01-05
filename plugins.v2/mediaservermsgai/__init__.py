@@ -515,6 +515,10 @@ class mediaservermsgai(_PluginBase):
                 media_type_url = "movie" if event_info.item_type == "MOV" else "tv"
                 tmdb_url = f"https://www.themoviedb.org/{media_type_url}/{tmdb_id}"
 
+            #if tmdb_url:
+                #message_title = f"[{title_name}]({tmdb_url}) {action_text} {server_name}"
+            #else:
+                #message_title = f"{title_name} {action_text} {server_name}"
             message_title = f"🆕 {title_name} {action_text} {server_name}"
 
             # 内容构造
