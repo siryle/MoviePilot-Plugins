@@ -522,6 +522,7 @@ class mediaservermsgai(_PluginBase):
             message_title = f"🆕 {title_name} {action_text} {server_name}"
 
             # 内容构造
+            #message_texts.append(f"⏰ {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
             message_texts.append(f"⏰ 时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
             
             # 智能分类（优先使用CategoryHelper，fallback到路径解析）
