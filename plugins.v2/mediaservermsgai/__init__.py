@@ -298,7 +298,7 @@ class mediaservermsgai(_PluginBase):
                 return
             
             # 打印event_info用于调试
-            logger.debug(f"收到Webhook事件: {event_info}")
+            logger.info(f"收到Webhook事件: {event_info}")
             
             # 兼容性处理：如果没有映射的动作，尝试使用原始事件名
             if not self._webhook_actions.get(event_info.event):
