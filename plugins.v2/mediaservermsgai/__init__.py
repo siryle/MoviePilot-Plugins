@@ -515,7 +515,7 @@ class mediaservermsgai(_PluginBase):
                 media_type_url = "movie" if event_info.item_type == "MOV" else "tv"
                 tmdb_url = f"https://www.themoviedb.org/{media_type_url}/{tmdb_id}"
 
-            message_title = f"{title_name} {action_text} {server_name}"
+            message_title = f"🆕 {title_name} {action_text} {server_name}"
 
             # 内容构造
             message_texts.append(f"⏰ {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
@@ -661,7 +661,7 @@ class mediaservermsgai(_PluginBase):
         server_name = self._get_server_name_cn(first_info)
         tmdb_url = f"https://www.themoviedb.org/tv/{tmdb_id}" if tmdb_id else ""
         
-        message_title = f"{title_name} 已入库 (含{count}个文件) {server_name}"
+        message_title = f"🆕 {title_name} 已入库 (含{count}个文件) {server_name}"
 
         message_texts = []
         message_texts.append(f"⏰ {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
