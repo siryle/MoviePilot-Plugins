@@ -501,8 +501,8 @@ class mediaservermsgai(_PluginBase):
                 #title_name = event_info.json_object.get('Item', {}).get('SeriesName') or title_name
             
             year = tmdb_info.year if (tmdb_info and tmdb_info.year) else event_info.json_object.get('Item', {}).get('ProductionYear')
-            #if year and str(year) not in title_name:
-                #title_name += f" ({year})"
+            if year and str(year) not in title_name:
+                title_name += f" ({year})"
             
             action_base = self._webhook_actions.get(event_info.event, "通知")
             type_cn = "剧集" if event_info.item_type in ["TV", "SHOW"] else "电影"
@@ -661,8 +661,8 @@ class mediaservermsgai(_PluginBase):
             title_name = first_info.json_object.get('Item', {}).get('SeriesName') or title_name
         
         year = tmdb_info.year if (tmdb_info and tmdb_info.year) else first_info.json_object.get('Item', {}).get('ProductionYear')
-        #if year and str(year) not in title_name:
-            #title_name += f" ({year})"
+        if year and str(year) not in title_name:
+            title_name += f" ({year})"
         
         server_name = self._get_server_name_cn(first_info)
         tmdb_url = f"https://www.themoviedb.org/tv/{tmdb_id}" if tmdb_id else ""
