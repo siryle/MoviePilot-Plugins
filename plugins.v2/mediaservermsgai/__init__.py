@@ -938,10 +938,10 @@ class mediaservermsgai(_PluginBase):
         #if region:
             #texts.append(f"🏳️ 地区：{region}")
 
-        if hasattr(tmdb_info, 'status') and tmdb_info.status:
-            status_map = {'Ended': '已完结', 'Returning Series': '连载中', 'Canceled': '已取消', 'In Production': '制作中', 'Planned': '计划中', 'Released': '已上映', 'Continuing': '连载中'}
-            status_text = status_map.get(tmdb_info.status, tmdb_info.status)
-            texts.append(f"📡 状态：{status_text}")
+        #if hasattr(tmdb_info, 'status') and tmdb_info.status:
+            #status_map = {'Ended': '已完结', 'Returning Series': '连载中', 'Canceled': '已取消', 'In Production': '制作中', 'Planned': '计划中', 'Released': '已上映', 'Continuing': '连载中'}
+            #status_text = status_map.get(tmdb_info.status, tmdb_info.status)
+            #texts.append(f"📡 状态：{status_text}")
 
     def _get_region_text_cn(self, tmdb_info) -> str:
         if not tmdb_info: return ""
