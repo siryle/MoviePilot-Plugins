@@ -1390,7 +1390,7 @@ class SaMediaSyncDel(_PluginBase):
             elif season_num:
                 show_title += f" ({media_year}) S{int(season_num):.2d}"
             else:
-                show_title +- f" ({media_year})"
+                show_title += f" ({media_year})"
 
             if media_storage == "p115":
                 show_storage = "115网盘"
