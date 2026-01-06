@@ -1386,11 +1386,11 @@ class SaMediaSyncDel(_PluginBase):
             
             show_title = tmdb_info.title
             if episode_num: 
-                show_title = f"{show_title} ({media_year}) S{int(season_num):02d}E{int(episode_num):02d}"
+                show_title += f" ({media_year}) S{int(season_num):02d}E{int(episode_num):02d}"
             elif season_num:
-                show_title = f"{show_title} ({media_year}) S{int(season_num):02d}"
+                show_title += f" ({media_year}) S{int(season_num):02d}"
             else:
-                show_title = f"{show_title} ({media_year})"
+                show_title += f" ({media_year})"
 
             if media_storage == "p115":
                 show_storage = "115网盘"
