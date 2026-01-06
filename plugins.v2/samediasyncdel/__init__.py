@@ -1381,15 +1381,26 @@ class SaMediaSyncDel(_PluginBase):
                     torrent_cnt_msg += f"暂停种子{stop_cnt}个\n"
             if error_cnt:
                 torrent_cnt_msg += f"删种失败{error_cnt}个\n"
+            
+            if media_storage == "p115":
+                show_storage = "115网盘"
+            elif media_storage == "p123":
+                show_storage = "123网盘"
+            elif media_storage == "local":
+                show_storage = "本地存储"
+            else:
+                show_storage = "未知存储类型"
             # 发送通知
             self.post_message(
                 mtype=NotificationType.Plugin,
                 #title="媒体库同步删除任务完成",
-                title=f"🗑 {media_name}{media_year} 已删除",
+                title=f"🗑 {media_name} ({media_year}) 已删除",
                 image=backrop_image,
                 #text=f"{msg}\n"
                 text=f"\n⏰ 时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}\n"
-                f"🗂️ 路径：{media_path}\n"
+                f"📄 文件：{len(transfer_history) if transfer_history else '0'}个\n"
+                f"💾 存储：{show_storage}\n"
+                f"🗂️ 路径：\n{media_path}\n"
                 #f"删除记录{len(transfer_history) if transfer_history else '0'}个\n"
                 f"{torrent_cnt_msg}",
                 #f"时间 {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}",
