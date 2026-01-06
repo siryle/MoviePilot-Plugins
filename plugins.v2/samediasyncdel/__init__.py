@@ -1385,12 +1385,12 @@ class SaMediaSyncDel(_PluginBase):
             media_year = tmdb_info.year if (tmdb_info and tmdb_info.year) else event_info.json_object.get('Item', {}).get('ProductionYear')
             
             show_title = tmdb_info.title
-            if episode_num: 
-                show_title += f" ({media_year}) S{int(season_num):.2d}E{int(episode_num):.2d}"
-            elif season_num:
-                show_title += f" ({media_year}) S{int(season_num):.2d}"
-            else:
-                show_title += f" ({media_year})"
+            #if episode_num: 
+                #show_title += f" ({media_year}) S{int(season_num):.2d}E{int(episode_num):.2d}"
+            #elif season_num:
+                #show_title += f" ({media_year}) S{int(season_num):.2d}"
+            #else:
+            show_title += f" ({media_year})"
 
             if media_storage == "p115":
                 show_storage = "115网盘"
