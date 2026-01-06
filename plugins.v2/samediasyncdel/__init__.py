@@ -1348,7 +1348,7 @@ class SaMediaSyncDel(_PluginBase):
 
         tmdb_info = None
         if tmdb_id:
-            mtype = MediaType.MOVIE if event_info.item_type == "MOV" else MediaType.TV
+            mtype = media_type
             try:
                 tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=mtype)
             except Exception: pass
