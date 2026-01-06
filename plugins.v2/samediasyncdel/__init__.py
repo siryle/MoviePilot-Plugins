@@ -1386,9 +1386,9 @@ class SaMediaSyncDel(_PluginBase):
             
             show_title = tmdb_info.title
             if episode_num: 
-                show_title = f"{show_title} ({media_year}) S{int(season_num)}E{int(episode_num)}"
+                show_title = f"{show_title} ({media_year}) S{int(season_num):02d}E{int(episode_num):02d}"
             elif season_num:
-                show_title = f"{show_title} ({media_year}) S{int(season_num)}"
+                show_title = f"{show_title} ({media_year}) S{int(season_num):02d}"
             else:
                 show_title = f"{show_title} ({media_year})"
 
