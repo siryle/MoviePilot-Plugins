@@ -1373,6 +1373,16 @@ class SaMediaSyncDel(_PluginBase):
                     torrent_cnt_msg += f"暂停种子{stop_cnt}个\n"
             if error_cnt:
                 torrent_cnt_msg += f"删种失败{error_cnt}个\n"
+
+
+            tmdb_info = None
+            if tmdb_id:
+                mtype = media_type
+                try:
+                    tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=mtype)
+                except Exception: pass
+            show_title = tmdb_info.title
+            media_year = tmdb_info.year if (tmdb_info and tmdb_info.year) else event_info.json_object.get('Item', {}).get('ProductionYear')
             
             if media_storage == "p115":
                 show_storage = "115网盘"
@@ -1386,7 +1396,7 @@ class SaMediaSyncDel(_PluginBase):
             self.post_message(
                 mtype=NotificationType.Plugin,
                 #title="媒体库同步删除任务完成",
-                title=f"🗑 {msg} 已删除",
+                title=f"🗑 {show_title} ({media_year}) 已删除",
                 image=backrop_image,
                 #text=f"{msg}\n"
                 text=f"\n⏰ 时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}\n"
@@ -1558,24 +1568,15 @@ class SaMediaSyncDel(_PluginBase):
         # 类型
         mtype = MediaType.MOVIE if media_type in ["Movie", "MOV"] else MediaType.TV
 
-        tmdb_info = None
-        if tmdb_id:
-            mtype = media_type
-            try:
-                tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=mtype)
-            except Exception: pass
-
-        media_year = tmdb_info.year if (tmdb_info and tmdb_info.year) else event_info.json_object.get('Item', {}).get('ProductionYear')
-
         # 删除电影
         if mtype == MediaType.MOVIE:
-            msg = f"{media_name} {media_year}"
+            msg = f"电影 {media_name} {tmdb_id}"
             transfer_history: List[TransferHistory] = self._transferhis.get_by(
                 tmdbid=tmdb_id, mtype=mtype.value, dest=media_path
             )
         # 删除电视剧
         elif mtype == MediaType.TV and not season_num and not episode_num:
-            msg = f"{media_name} {media_year}"
+            msg = f"剧集 {media_name} {tmdb_id}"
             transfer_history: List[TransferHistory] = self._transferhis.get_by(
                 tmdbid=tmdb_id, mtype=mtype.value
             )
@@ -1584,7 +1585,7 @@ class SaMediaSyncDel(_PluginBase):
             if not season_num or not str(season_num).isdigit():
                 logger.error(f"{media_name} 季同步删除失败，未获取到具体季")
                 return
-            msg = f"{media_name} S{season_num}"
+            msg = f"剧集 {media_name} S{season_num} {tmdb_id}"
             transfer_history: List[TransferHistory] = self._transferhis.get_by(
                 tmdbid=tmdb_id, mtype=mtype.value, season=f"S{season_num}"
             )
@@ -1598,7 +1599,7 @@ class SaMediaSyncDel(_PluginBase):
             ):
                 logger.error(f"{media_name} 集同步删除失败，未获取到具体集")
                 return
-            msg = f"{media_name} {media_year} S{season_num}E{episode_num}"
+            msg = f"剧集 {media_name} S{season_num}E{episode_num} {tmdb_id}"
             transfer_history: List[TransferHistory] = self._transferhis.get_by(
                 tmdbid=tmdb_id,
                 mtype=mtype.value,
