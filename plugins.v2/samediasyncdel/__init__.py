@@ -1346,6 +1346,15 @@ class SaMediaSyncDel(_PluginBase):
 
         media_type = MediaType.MOVIE if media_type in ["Movie", "MOV"] else MediaType.TV
 
+        tmdb_info = None
+            if tmdb_id:
+                mtype = MediaType.MOVIE if event_info.item_type == "MOV" else MediaType.TV
+                try:
+                    tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=mtype)
+                except Exception: pass
+
+        media_year = tmdb_info.year if (tmdb_info and tmdb_info.year) else event_info.json_object.get('Item', {}).get('ProductionYear')
+
         # 发送消息
         if self._notify:
             backrop_image = (
@@ -1376,7 +1385,7 @@ class SaMediaSyncDel(_PluginBase):
             self.post_message(
                 mtype=NotificationType.Plugin,
                 #title="媒体库同步删除任务完成",
-                title=f"🗑 {media_name} 已删除",
+                title=f"🗑 {media_name}{media_year} 已删除",
                 image=backrop_image,
                 #text=f"{msg}\n"
                 text=f"\n⏰ 时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}\n"
