@@ -1110,10 +1110,6 @@ class SaMediaSyncDel(_PluginBase):
 
             logger.info(f"正在同步删除 {msg}")
 
-            
-            delfile_counts = 0
-            delfolder_counts = 0
-
             if not transfer_history:
                 msg, transfer_history = self.__get_transfer_his(
                     media_type=media_type,
@@ -1402,7 +1398,6 @@ class SaMediaSyncDel(_PluginBase):
                 image=backrop_image,
                 #text=f"{msg}\n"
                 text=f"\n⏰ 时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}\n"
-                f"📄 数量：{delfolder_counts}个目录 {len(transfer_history) if transfer_history else delfile_counts}个文件\n"
                 f"💾 存储：{show_storage}\n"
                 f"🗂️ 路径：\n{media_path}\n"
                 #f"删除记录{len(transfer_history) if transfer_history else '0'}个\n"
@@ -1462,12 +1457,10 @@ class SaMediaSyncDel(_PluginBase):
                 # 删除整个文件夹
                 self._storagechain.delete_file(fileitem)
                 logger.info(f"{media_name} 删除网盘文件夹：{file_path}")
-                delfolder_counts = 1
             else:
                 # 调用 MP 模块删除媒体文件和空媒体目录
                 self._storagechain.delete_media_file(fileitem=fileitem)
                 logger.info(f"{media_name} 删除网盘媒体文件：{file_path}")
-                delfile_counts += 1
         except Exception as e:
             logger.error(f"{media_name} 删除网盘媒体 {file_path} 失败: {e}")
 
