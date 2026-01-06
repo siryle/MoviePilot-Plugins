@@ -1347,11 +1347,11 @@ class SaMediaSyncDel(_PluginBase):
         media_type = MediaType.MOVIE if media_type in ["Movie", "MOV"] else MediaType.TV
 
         tmdb_info = None
-            if tmdb_id:
-                mtype = MediaType.MOVIE if event_info.item_type == "MOV" else MediaType.TV
-                try:
-                    tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=mtype)
-                except Exception: pass
+        if tmdb_id:
+            mtype = MediaType.MOVIE if event_info.item_type == "MOV" else MediaType.TV
+            try:
+                tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=mtype)
+            except Exception: pass
 
         media_year = tmdb_info.year if (tmdb_info and tmdb_info.year) else event_info.json_object.get('Item', {}).get('ProductionYear')
 
