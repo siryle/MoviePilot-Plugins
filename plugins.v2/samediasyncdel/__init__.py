@@ -1381,15 +1381,17 @@ class SaMediaSyncDel(_PluginBase):
                 try:
                     tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=mtype)
                 except Exception: pass
-            show_title = tmdb_info.title
-            if episode_num: 
-                show_title += f" S{season_num}E{episode_num}"
-            elif season_num:
-                show_title += f" S{season_num}"
-            else:
-                show_title
+            
             media_year = tmdb_info.year if (tmdb_info and tmdb_info.year) else event_info.json_object.get('Item', {}).get('ProductionYear')
             
+            show_title = tmdb_info.title
+            if episode_num: 
+                show_title += f" ({media_year}) S{season_num}E{episode_num}"
+            elif season_num:
+                show_title += f" ({media_year}) S{season_num}"
+            else:
+                show_title +- f" ({media_year})"
+
             if media_storage == "p115":
                 show_storage = "115网盘"
             elif media_storage == "p123":
@@ -1402,7 +1404,7 @@ class SaMediaSyncDel(_PluginBase):
             self.post_message(
                 mtype=NotificationType.Plugin,
                 #title="媒体库同步删除任务完成",
-                title=f"🗑 {show_title} ({media_year}) 已删除",
+                title=f"🗑 {show_title} 已删除",
                 image=backrop_image,
                 #text=f"{msg}\n"
                 text=f"\n⏰ 时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}\n"
