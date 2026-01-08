@@ -1362,7 +1362,7 @@ class SaMediaSyncDel(_PluginBase):
 
             torrent_cnt_msg = ""
             if del_torrent_hashs:
-                torrent_cnt_msg += f"删除种子{len(set(del_torrent_hashs))}个\n"
+                torrent_cnt_msg += f"🌱 种子：删除{len(set(del_torrent_hashs))}个\n"
             if stop_torrent_hashs:
                 stop_cnt = 0
                 # 排除已删除
@@ -1370,9 +1370,9 @@ class SaMediaSyncDel(_PluginBase):
                     if stop_hash not in set(del_torrent_hashs):
                         stop_cnt += 1
                 if stop_cnt > 0:
-                    torrent_cnt_msg += f"暂停种子{stop_cnt}个\n"
+                    torrent_cnt_msg += f"🌱 种子：暂停{stop_cnt}个\n"
             if error_cnt:
-                torrent_cnt_msg += f"删种失败{error_cnt}个\n"
+                torrent_cnt_msg += f"🌱 种子：失败{error_cnt}个\n"
 
 
             tmdb_info = None
@@ -1430,8 +1430,8 @@ class SaMediaSyncDel(_PluginBase):
         history.append(
             {
                 "type": media_type.value,
-                "title": media_name,
-                "year": year,
+                "title": tmdb_info.title,
+                "year": media_year,
                 "path": media_path,
                 "season": season_num
                 if season_num and str(season_num).isdigit()
