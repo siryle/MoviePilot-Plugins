@@ -2582,7 +2582,7 @@ class MediaCoverGenerator(_PluginBase):
         default_en_url_multi_1 = "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/multi_1_en.otf"
 
         # 默认角标字体
-        default_badge_url = "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/badge_font.ttf"
+        default_badge_url = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/refs/heads/main/fonts/multi_1_en.otf"
 
         is_multi_1_style = self._cover_style == "multi_1"
 
