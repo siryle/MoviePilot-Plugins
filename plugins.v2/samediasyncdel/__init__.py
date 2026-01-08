@@ -1409,7 +1409,7 @@ class SaMediaSyncDel(_PluginBase):
                 #text=f"{msg}\n"
                 text=f"\n⏰ 时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}\n"
                 f"💾 存储：{show_storage}\n"
-                f"🗂️ 路径：\n{media_path}\n"
+                f"🗂️ 路径：{media_path}\n"
                 #f"删除记录{len(transfer_history) if transfer_history else '0'}个\n"
                 f"{torrent_cnt_msg}",
                 #f"时间 {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}",
