@@ -771,7 +771,7 @@ class SaMediaSyncDel(_PluginBase):
                     },
                     {
                         "component": "VCardText",
-                        "props": {"class": "pa-0 px-2"},
+                        props": {"class": "pa-0 px-2"},
                         "text": f"年份：{year}",
                     },
                     {
@@ -1293,12 +1293,20 @@ class SaMediaSyncDel(_PluginBase):
             
             logger.info(f"🗑️ 开始删除 {len(transfer_history)} 条转移记录...")
             
+            # 从转移记录中获取媒体类型
+            media_type = None
+            if transfer_history and hasattr(transfer_history[0], 'type'):
+                if transfer_history[0].type in ['电视剧', 'TV', 'tv']:
+                    media_type = MediaType.TV
+                else:
+                    media_type = MediaType.MOVIE
+            
             for i, transferhis in enumerate(transfer_history, 1):
                 logger.info(f"📝 处理第 {i}/{len(transfer_history)} 条记录: {transferhis.title}")
                 
                 title = transferhis.title
                 if title not in media_name:
-                    logger.warn(f"⚠️ 当前转移记录 {transferhis.id} {title} {transferhis.tmdbid} 与删除媒体{media_name}不符，防误删，暂不自动删除")
+                    logger.warning(f"⚠️ 当前转移记录 {transferhis.id} {title} {transferhis.tmdbid} 与删除媒体{media_name}不符，防误删，暂不自动删除")
                     continue
                     
                 image = transferhis.image or image
@@ -1370,20 +1378,10 @@ class SaMediaSyncDel(_PluginBase):
             logger.info(f"🔔 通知开关状态: self._notify = {self._notify}")
             logger.info(f"🔔 删除记录数: {len(transfer_history)}")
             
-            # 判断媒体类型（修正逻辑）
-            media_type_enum = MediaType.MOVIE
-            if transfer_history and hasattr(transfer_history[0], 'type'):
-                if transfer_history[0].type == '电视剧' or transfer_history[0].type == 'TV':
-                    media_type_enum = MediaType.TV
-                else:
-                    media_type_enum = MediaType.MOVIE
-            
-            logger.info(f"🔔 媒体类型判断: {media_type_enum}")
-            
-            # 发送通知（确保参数正确）
+            # 发送通知
             self._send_notification(
                 media_name=media_name,
-                media_type=media_type_enum,  # 使用正确的媒体类型
+                media_type=media_type,  # 使用正确的媒体类型
                 media_path=media_path or (transfer_history[0].dest if transfer_history else ""),
                 tmdb_id=transfer_history[0].tmdbid if transfer_history else None,
                 season_num=None,
@@ -1400,7 +1398,7 @@ class SaMediaSyncDel(_PluginBase):
             # 保存历史记录
             self._save_history(
                 media_name=media_name,
-                media_type=media_type_enum,  # 使用正确的媒体类型
+                media_type=media_type,  # 使用正确的媒体类型
                 media_path=media_path or (transfer_history[0].dest if transfer_history else ""),
                 tmdb_id=transfer_history[0].tmdbid if transfer_history else None,
                 year=year,
@@ -1440,10 +1438,12 @@ class SaMediaSyncDel(_PluginBase):
             if tmdb_id:
                 try:
                     logger.debug(f"🖼️ 尝试获取背景图片: tmdb_id={tmdb_id}, media_type={media_type}")
+                    # 修复这里：使用正确的媒体类型枚举
+                    media_type_enum = MediaType.TV if media_type in [MediaType.TV, 'TV', '电视剧'] else MediaType.MOVIE
                     backrop_image = (
                         self.chain.obtain_specific_image(
                             mediaid=tmdb_id,
-                            mtype=media_type,
+                            mtype=media_type_enum,
                             image_type=MediaImageType.Backdrop,
                             season=season_num,
                             episode=episode_num,
@@ -1475,17 +1475,19 @@ class SaMediaSyncDel(_PluginBase):
             if tmdb_id:
                 try:
                     logger.debug(f"🔍 获取TMDB信息: tmdb_id={tmdb_id}")
-                    tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=media_type)
+                    # 修复这里：使用正确的媒体类型枚举
+                    media_type_enum = MediaType.TV if media_type in [MediaType.TV, 'TV', '电视剧'] else MediaType.MOVIE
+                    tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=media_type_enum)
                     logger.info(f"✅ 获取到TMDB信息: {tmdb_info.title if tmdb_info else '无'}")
                 except Exception as e:
                     logger.warning(f"⚠️ 获取TMDB信息失败: {str(e)}")
-            
+        
             media_year = tmdb_info.year if (tmdb_info and tmdb_info.year) else year
             
             show_title = tmdb_info.title if tmdb_info else media_name
-            if episode_num and episode_num != "None": 
+            if episode_num and episode_num != "None" and str(episode_num).isdigit(): 
                 show_title += f" ({media_year}) S{int(season_num):02d}E{int(episode_num):02d}"
-            elif season_num and season_num != "None":
+            elif season_num and season_num != "None" and str(season_num).isdigit():
                 show_title += f" ({media_year}) S{int(season_num):02d}"
             else:
                 show_title += f" ({media_year})" if media_year else show_title
@@ -1501,12 +1503,16 @@ class SaMediaSyncDel(_PluginBase):
                 show_storage = "未知存储类型"
             
             # 判断媒体类型emoji
-            media_emoji = "🎬" if media_type == MediaType.MOVIE else "📺"
+            media_type_str = str(media_type)
+            media_emoji = "🎬" if media_type_str in ["MOVIE", "Movie", MediaType.MOVIE.value, "movie"] else "📺"
+            
+            # 媒体类型显示文本
+            media_type_display = "电影" if media_type_str in ["MOVIE", "Movie", MediaType.MOVIE.value, "movie"] else "剧集"
             
             # 构建通知内容
             notification_text = (
                 f"⏰ 时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}\n"
-                f"📊 类型：{media_type.value if hasattr(media_type, 'value') else media_type}\n"
+                f"📊 类型：{media_type_display}\n"
                 f"💾 存储：{show_storage}\n"
                 f"📊 记录：删除转移记录 {len(transfer_history) if transfer_history else 0} 条\n"
                 f"{torrent_cnt_msg if torrent_cnt_msg else '✅ 操作：无相关种子'}\n"
@@ -1518,11 +1524,12 @@ class SaMediaSyncDel(_PluginBase):
             # 发送通知
             try:
                 logger.info(f"🚀 开始发送通知，标题: {show_title}")
+                # 使用正确的通知方法
                 self.post_message(
-                    mtype=NotificationType.Plugin,
+                    mtype=NotificationType.Manual,
                     title=f"{media_emoji} {show_title} 已删除",
-                    image=backrop_image,
                     text=notification_text,
+                    image=backrop_image
                 )
                 
                 logger.info("✅ 通知发送成功")
@@ -1543,21 +1550,22 @@ class SaMediaSyncDel(_PluginBase):
             history = self.get_data("history") or []
 
             # 获取poster图片
+            media_type_enum = MediaType.TV if media_type in [MediaType.TV, 'TV', '电视剧'] else MediaType.MOVIE
             poster_image = (
                 self.chain.obtain_specific_image(
                     mediaid=tmdb_id,
-                    mtype=media_type,
+                    mtype=media_type_enum,
                     image_type=MediaImageType.Poster,
                 )
                 or image
             )
 
             # 使用emoji表示媒体类型
-            media_type_emoji = "🎬" if media_type == MediaType.MOVIE else "📺"
+            media_type_emoji = "🎬" if media_type_enum == MediaType.MOVIE else "📺"
 
             history.append(
                 {
-                    "type": f"{media_type_emoji} {media_type.value}",
+                    "type": f"{media_type_emoji} {media_type_enum.value}",
                     "title": media_name,
                     "year": year,
                     "path": media_path,
