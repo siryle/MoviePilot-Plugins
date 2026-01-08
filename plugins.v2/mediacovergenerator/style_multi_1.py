@@ -751,7 +751,7 @@ def add_badge_to_image(image, number, font_path=None, font_size=1.0,
     
     Args:
         image: PIL.Image对象
-        number: 角标数字（媒体总数）
+        number: 角标数字（媒体总数），可以为0
         font_path: 角标字体路径
         font_size: 角标字体大小比例
         position: 角标位置 ('top-left', 'top-right', 'bottom-left', 'bottom-right')
@@ -762,10 +762,15 @@ def add_badge_to_image(image, number, font_path=None, font_size=1.0,
         带角标的图像
     """
     try:
-        # 将数字转换为字符串
+        # 将数字转换为字符串，即使为0也显示
         number_str = str(number)
         if number > 9999:
             number_str = "9999+"
+        
+        # 如果数字为0，仍然显示角标
+        if number < 0:
+            # 如果数字为负数（表示获取失败），不显示角标
+            return image
         
         # 创建绘制对象
         draw = ImageDraw.Draw(image)
@@ -894,7 +899,7 @@ def add_badge_to_image(image, number, font_path=None, font_size=1.0,
     except Exception as e:
         logger.error(f"添加角标失败: {str(e)}")
         return image
-
+    
 def create_style_multi_1(library_dir, title, font_path, font_size=(1,1), is_blur=False, blur_size=50, color_ratio=0.8,
                          badge_number=None, badge_font_path=None, badge_font_size=1.0,
                          badge_position='top-left', badge_color='#FF0000', badge_padding=10):
