@@ -704,8 +704,8 @@ class mediaservermsgai(_PluginBase):
         if overview:
             if len(overview) > self._overview_max_length:
                 overview = overview[:self._overview_max_length].rstrip() + "..."
-            message_texts.append("\n━━━━━━━━━━━━━━━━━━\n") 
-            message_texts.append(f"📖 剧情简介\n{overview}")
+            #message_texts.append("\n━━━━━━━━━━━━━━━━━━\n") 
+            message_texts.append(f"📖 简介：\n{overview}")
 
         image_url = first_info.image_url
         if not image_url and tmdb_id:
