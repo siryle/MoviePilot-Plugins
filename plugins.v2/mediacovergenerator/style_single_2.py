@@ -239,7 +239,7 @@ def create_shadow_mask(size, split_top=0.5, split_bottom=0.33, feather_size=40):
     return mask
 
 def add_badge_to_image(image, number, font_path=None, font_size=1.0,
-                      position='top-left', color='#FF0000', padding=10):
+                      position='top-left', bg_color='#FF0000', text_color=None, padding=10):
     """
     在图像上添加圆角矩形角标
     
@@ -249,7 +249,8 @@ def add_badge_to_image(image, number, font_path=None, font_size=1.0,
         font_path: 角标字体路径
         font_size: 角标字体大小比例
         position: 角标位置 ('top-left', 'top-right', 'bottom-left', 'bottom-right')
-        color: 角标背景颜色
+        bg_color: 角标背景颜色
+        text_color: 角标文字颜色（如果为None，则使用白色）
         padding: 角标内边距
         
     Returns:
@@ -269,26 +270,26 @@ def add_badge_to_image(image, number, font_path=None, font_size=1.0,
         # 创建绘制对象
         draw = ImageDraw.Draw(image)
         
-        # 解析颜色
-        if color.startswith('#'):
-            color = color.lstrip('#')
-            if len(color) == 6:
-                r = int(color[0:2], 16)
-                g = int(color[2:4], 16)
-                b = int(color[4:6], 16)
+        # 解析背景颜色
+        if bg_color.startswith('#'):
+            bg_color = bg_color.lstrip('#')
+            if len(bg_color) == 6:
+                r = int(bg_color[0:2], 16)
+                g = int(bg_color[2:4], 16)
+                b = int(bg_color[4:6], 16)
             else:
                 r, g, b = 255, 0, 0  # 默认红色
         else:
             # 尝试解析RGB格式
             try:
-                if ',' in color:
-                    r, g, b = [int(c.strip()) for c in color.strip('()').split(',')[:3]]
+                if ',' in bg_color:
+                    r, g, b = [int(c.strip()) for c in bg_color.strip('()').split(',')[:3]]
                 else:
                     r, g, b = 255, 0, 0  # 默认红色
             except:
                 r, g, b = 255, 0, 0  # 默认红色
         
-        badge_color = (r, g, b)
+        badge_bg_color = (r, g, b)
         
         # 计算角标大小
         image_width, image_height = image.size
@@ -354,9 +355,33 @@ def add_badge_to_image(image, number, font_path=None, font_size=1.0,
         text_x = rect_x + (rect_width - text_width) // 2
         text_y = rect_y + (rect_height - text_height) // 2
         
+        # 解析文字颜色（如果未提供，则使用白色）
+        if text_color:
+            if text_color.startswith('#'):
+                text_color = text_color.lstrip('#')
+                if len(text_color) == 6:
+                    text_r = int(text_color[0:2], 16)
+                    text_g = int(text_color[2:4], 16)
+                    text_b = int(text_color[4:6], 16)
+                else:
+                    text_r, text_g, text_b = 255, 255, 255  # 默认白色
+            else:
+                # 尝试解析RGB格式
+                try:
+                    if ',' in text_color:
+                        text_r, text_g, text_b = [int(c.strip()) for c in text_color.strip('()').split(',')[:3]]
+                    else:
+                        text_r, text_g, text_b = 255, 255, 255  # 默认白色
+                except:
+                    text_r, text_g, text_b = 255, 255, 255  # 默认白色
+        else:
+            text_r, text_g, text_b = 255, 255, 255  # 默认白色
+        
+        text_fg_color = (text_r, text_g, text_b)
+        
         # 创建圆角矩形角标
         # 绘制圆角矩形背景，带透明度
-        badge_color_with_alpha = badge_color + (220,)  # 85% 不透明度
+        badge_color_with_alpha = badge_bg_color + (220,)  # 85% 不透明度
         
         # 绘制圆角矩形
         draw.rounded_rectangle(
@@ -379,14 +404,14 @@ def add_badge_to_image(image, number, font_path=None, font_size=1.0,
             fill=badge_color_with_alpha
         )
         
-        # 绘制文本（白色，带一点阴影效果）
+        # 绘制文本（使用指定的文字颜色，带一点阴影效果）
         # 文本阴影
         text_shadow_offset = 1
         draw.text((text_x + text_shadow_offset, text_y + text_shadow_offset), 
                  number_str, fill=(0, 0, 0, 100), font=font, align='center')
         
         # 文本前景
-        draw.text((text_x, text_y), number_str, fill='white', font=font, align='center')
+        draw.text((text_x, text_y), number_str, fill=text_fg_color, font=font, align='center')
         
         return image
         
@@ -396,7 +421,7 @@ def add_badge_to_image(image, number, font_path=None, font_size=1.0,
     
 def create_style_single_2(image_path, title, font_path, font_size=(1,1), blur_size=50, color_ratio=0.8,
                          badge_number=None, badge_font_path=None, badge_font_size=1.0,
-                         badge_position='top-left', badge_color='#FF0000', badge_padding=10):
+                         badge_position='top-left', badge_color='#FF0000', badge_text_color=None, badge_padding=10):
     """
     创建单图样式2的封面，支持圆角矩形角标功能
     
@@ -411,7 +436,8 @@ def create_style_single_2(image_path, title, font_path, font_size=(1,1), blur_si
         badge_font_path: 角标字体路径
         badge_font_size: 角标字体大小比例
         badge_position: 角标位置 ('top-left', 'top-right', 'bottom-left', 'bottom-right')
-        badge_color: 角标颜色
+        badge_color: 角标背景颜色
+        badge_text_color: 角标文字颜色（如果为None，则使用白色）
         badge_padding: 角标内边距
         
     Returns:
@@ -575,7 +601,8 @@ def create_style_single_2(image_path, title, font_path, font_size=(1,1), blur_si
                 font_path=badge_font_path,
                 font_size=badge_font_size,
                 position=badge_position,
-                color=badge_color,
+                bg_color=badge_color,
+                text_color=badge_text_color,  # 新增：传递文字颜色
                 padding=badge_padding
             )
 

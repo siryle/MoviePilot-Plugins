@@ -14,6 +14,7 @@ from collections import defaultdict
 
 import pytz
 import yaml
+from PIL import ImageColor
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -46,7 +47,7 @@ class MediaCoverGenerator(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/icons/emby.png"
     # 插件版本
-    plugin_version = "0.9.0"  # 更新版本号
+    plugin_version = "0.9.1"  # 更新版本号
     # 插件作者
     plugin_author = "justzerock"
     # 作者主页
@@ -116,6 +117,7 @@ class MediaCoverGenerator(_PluginBase):
     _badge_font_size = 1
     _badge_position = 'top-left'
     _badge_color = '#FF0000'
+    _badge_text_color = ''  # 新增：角标文字颜色
     _badge_padding = 10
 
     def __init__(self):
@@ -176,6 +178,7 @@ class MediaCoverGenerator(_PluginBase):
             self._badge_font_size = config.get("badge_font_size") or 1
             self._badge_position = config.get("badge_position") or 'top-left'
             self._badge_color = config.get("badge_color") or '#FF0000'
+            self._badge_text_color = config.get("badge_text_color") or ''  # 新增
             self._badge_padding = config.get("badge_padding") or 10
 
         if self._selected_servers:
@@ -263,6 +266,7 @@ class MediaCoverGenerator(_PluginBase):
             "badge_font_size": self._badge_font_size,
             "badge_position": self._badge_position,
             "badge_color": self._badge_color,
+            "badge_text_color": self._badge_text_color,  # 新增
             "badge_padding": self._badge_padding
         })
 
@@ -954,7 +958,7 @@ class MediaCoverGenerator(_PluginBase):
                                 'props': {
                                     'type': 'info',
                                     'variant': 'tonal',
-                                    'text': '在封面左上角添加角标，显示媒体总数'
+                                    'text': '在封面左上角添加角标，显示媒体总数。文字颜色会自动计算与背景色的对比色以确保可读性'
                                 }
                             }
                         ]
@@ -1082,10 +1086,30 @@ class MediaCoverGenerator(_PluginBase):
                                 'component': 'VTextField',
                                 'props': {
                                     'model': 'badge_color',
-                                    'label': '角标颜色',
+                                    'label': '角标背景色',
                                     'prependInnerIcon': 'mdi-palette',
                                     'placeholder': '#FF0000',
                                     'hint': '角标背景颜色，支持HEX或RGB',
+                                    'persistentHint': True
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        'component': 'VCol',
+                        'props': {
+                            'cols': 12,
+                            'md': 3
+                        },
+                        'content': [
+                            {
+                                'component': 'VTextField',
+                                'props': {
+                                    'model': 'badge_text_color',
+                                    'label': '角标文字颜色（可选）',
+                                    'prependInnerIcon': 'mdi-format-color-text',
+                                    'placeholder': '留空自动计算',
+                                    'hint': '留空则根据背景色自动计算对比色',
                                     'persistentHint': True
                                 }
                             }
@@ -1114,7 +1138,6 @@ class MediaCoverGenerator(_PluginBase):
                 ]
             }
         ]
-
 
         return [
             {
@@ -1517,6 +1540,7 @@ class MediaCoverGenerator(_PluginBase):
             "badge_font_size": 1,
             "badge_position": "top-left",
             "badge_color": "#FF0000",
+            "badge_text_color": "",  # 新增：角标文字颜色
             "badge_padding": 10
         }
 
@@ -1708,12 +1732,18 @@ class MediaCoverGenerator(_PluginBase):
         # 准备角标参数
         badge_params = {}
         if self._badge_enabled:
+            # 计算角标文字颜色（如果用户没有指定，则自动计算）
+            badge_text_color = self._badge_text_color
+            if not badge_text_color:
+                badge_text_color = self.__calculate_contrast_color(self._badge_color)
+            
             badge_params = {
-                'badge_number': badge_number,  # 即使为0也传递，让角标函数决定是否显示
+                'badge_number': badge_number,
                 'badge_font_path': str(self._badge_font_path) if self._badge_font_path else None,
                 'badge_font_size': float(self._badge_font_size) if self._badge_font_size else 1.0,
                 'badge_position': self._badge_position,
                 'badge_color': self._badge_color,
+                'badge_text_color': badge_text_color,  # 新增：计算出的文字颜色
                 'badge_padding': int(self._badge_padding)
             }
 
@@ -1722,13 +1752,13 @@ class MediaCoverGenerator(_PluginBase):
                                             font_size=font_size, 
                                             blur_size=blur_size, 
                                             color_ratio=color_ratio,
-                                            **badge_params)  # 传递角标参数
+                                            **badge_params)
         elif self._cover_style == 'single_2':
             image_data = create_style_single_2(image_path, title, font_path, 
                                             font_size=font_size, 
                                             blur_size=blur_size, 
                                             color_ratio=color_ratio,
-                                            **badge_params)  # 传递角标参数
+                                            **badge_params)
         elif self._cover_style == 'multi_1':
             zh_font_path = self._zh_font_path if self._multi_1_use_main_font else self._zh_font_path_multi_1
             en_font_path = self._en_font_path if self._multi_1_use_main_font else self._en_font_path_multi_1
@@ -1744,8 +1774,48 @@ class MediaCoverGenerator(_PluginBase):
                                                 is_blur=self._multi_1_blur, 
                                                 blur_size=blur_size_multi_1, 
                                                 color_ratio=color_ratio_multi_1,
-                                                **badge_params)  # 传递角标参数
+                                                **badge_params)
         return image_data
+    
+    def __calculate_contrast_color(self, bg_color):
+        """
+        根据背景色计算对比鲜明的文字颜色
+        返回白色或黑色，确保足够的对比度
+        """
+        try:
+            # 处理各种颜色格式
+            if bg_color.startswith('#'):
+                # HEX颜色
+                if len(bg_color) == 4:  # 简写格式 #RGB
+                    bg_color = f"#{bg_color[1]}{bg_color[1]}{bg_color[2]}{bg_color[2]}{bg_color[3]}{bg_color[3]}"
+                r = int(bg_color[1:3], 16) / 255
+                g = int(bg_color[3:5], 16) / 255
+                b = int(bg_color[5:7], 16) / 255
+            elif bg_color.startswith('rgb(') or bg_color.startswith('rgba('):
+                # RGB/RGBA颜色
+                parts = bg_color.replace('rgba(', '').replace('rgb(', '').replace(')', '').split(',')
+                r = int(parts[0].strip()) / 255
+                g = int(parts[1].strip()) / 255
+                b = int(parts[2].strip()) / 255
+            else:
+                # 默认使用PIL解析
+                rgb = ImageColor.getrgb(bg_color)
+                r, g, b = rgb[0]/255, rgb[1]/255, rgb[2]/255
+            
+            # 计算相对亮度 (WCAG标准)
+            # 公式: L = 0.2126 * R + 0.7152 * G + 0.0722 * B
+            luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+            
+            # 根据亮度选择文字颜色
+            # 阈值设为0.5，亮度高于0.5使用黑色文字，否则使用白色文字
+            if luminance > 0.5:
+                return '#000000'  # 黑色
+            else:
+                return '#FFFFFF'  # 白色
+                
+        except Exception as e:
+            logger.warning(f"计算对比色失败，使用默认颜色: {str(e)}")
+            return '#FFFFFF'  # 失败时使用白色
     
     def __get_media_count(self, server_name, library_name):
         """
