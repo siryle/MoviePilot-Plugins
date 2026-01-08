@@ -631,9 +631,12 @@ class mediaservermsgai(_PluginBase):
                 action_base = self._webhook_actions.get(event_info.event, "通知")
                 logger.debug(f"事件动作: {action_base}")
 
+                episodes_str = None
+                episodes_str = self._merge_continuous_episodes(events_info)
+                episodes_str += f" " if episodes_str is not None else episodes_str
                 # 根据事件类型设置不同的标题前缀
                 if "library.new" in event_info.event:
-                    message_title = f"🆕 {title_name} 已入库"
+                    message_title = f"🆕 {title_name} {episodes_str}已入库"
                 elif "playback.start" in event_info.event or "media.play" in event_info.event or "PlaybackStart" in event_info.event:
                     message_title = f"▶️ 开始播放：{title_name}"
                 elif "playback.stop" in event_info.event or "media.stop" in event_info.event or "PlaybackStop" in event_info.event:
@@ -888,7 +891,7 @@ class mediaservermsgai(_PluginBase):
             message_texts.append(f"📂 分类：{category}")
 
         episodes_str = self._merge_continuous_episodes(events_info)
-        message_texts.append(f"📺 季集：{episodes_str}")
+        #message_texts.append(f"📺 季集：{episodes_str}")
         logger.debug(f"聚合季集信息: {episodes_str}")
 
         self._append_meta_info(message_texts, tmdb_info)
