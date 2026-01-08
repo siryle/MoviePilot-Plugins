@@ -1366,14 +1366,25 @@ class SaMediaSyncDel(_PluginBase):
 
             logger.info(f"🎉 同步删除 {media_name} 完成！")
             
-            # 转换媒体类型
-            media_type_enum = MediaType.MOVIE if media_storage == "p115" else MediaType.TV
+            # 调试：检查通知开关
+            logger.info(f"🔔 通知开关状态: self._notify = {self._notify}")
+            logger.info(f"🔔 删除记录数: {len(transfer_history)}")
             
-            # 发送通知
+            # 判断媒体类型（修正逻辑）
+            media_type_enum = MediaType.MOVIE
+            if transfer_history and hasattr(transfer_history[0], 'type'):
+                if transfer_history[0].type == '电视剧' or transfer_history[0].type == 'TV':
+                    media_type_enum = MediaType.TV
+                else:
+                    media_type_enum = MediaType.MOVIE
+            
+            logger.info(f"🔔 媒体类型判断: {media_type_enum}")
+            
+            # 发送通知（确保参数正确）
             self._send_notification(
                 media_name=media_name,
-                media_type=media_type_enum,
-                media_path=media_path or transfer_history[0].dest if transfer_history else "",
+                media_type=media_type_enum,  # 使用正确的媒体类型
+                media_path=media_path or (transfer_history[0].dest if transfer_history else ""),
                 tmdb_id=transfer_history[0].tmdbid if transfer_history else None,
                 season_num=None,
                 episode_num=None,
@@ -1389,8 +1400,8 @@ class SaMediaSyncDel(_PluginBase):
             # 保存历史记录
             self._save_history(
                 media_name=media_name,
-                media_type=media_type_enum,
-                media_path=media_path or transfer_history[0].dest if transfer_history else "",
+                media_type=media_type_enum,  # 使用正确的媒体类型
+                media_path=media_path or (transfer_history[0].dest if transfer_history else ""),
                 tmdb_id=transfer_history[0].tmdbid if transfer_history else None,
                 year=year,
                 season_num=None,
@@ -1406,30 +1417,49 @@ class SaMediaSyncDel(_PluginBase):
                           media_storage, transfer_history, del_torrent_hashs, stop_torrent_hashs, 
                           error_cnt, image, year):
         """发送通知"""
+        # 检查通知开关
         if not self._notify:
-            logger.debug("🔕 通知功能未启用")
+            logger.info("🔕 通知功能未启用，跳过发送通知")
             return
             
         try:
-            logger.info("📨 准备发送通知...")
+            logger.info(f"📨 准备发送通知，媒体名称: {media_name}")
+            logger.info(f"📨 通知参数检查: media_type={media_type}, media_storage={media_storage}, tmdb_id={tmdb_id}")
             
+            # 检查必要参数
+            if not media_name:
+                logger.warning("⚠️ 媒体名称为空，跳过发送通知")
+                return
+                
+            if not transfer_history:
+                logger.warning("⚠️ 转移记录为空，跳过发送通知")
+                return
+        
             # 获取背景图片
-            backrop_image = (
-                self.chain.obtain_specific_image(
-                    mediaid=tmdb_id,
-                    mtype=media_type,
-                    image_type=MediaImageType.Backdrop,
-                    season=season_num,
-                    episode=episode_num,
-                )
-                or image
-            )
+            backrop_image = image  # 默认使用传入的图片
+            if tmdb_id:
+                try:
+                    logger.debug(f"🖼️ 尝试获取背景图片: tmdb_id={tmdb_id}, media_type={media_type}")
+                    backrop_image = (
+                        self.chain.obtain_specific_image(
+                            mediaid=tmdb_id,
+                            mtype=media_type,
+                            image_type=MediaImageType.Backdrop,
+                            season=season_num,
+                            episode=episode_num,
+                        )
+                        or image
+                    )
+                    logger.debug(f"🖼️ 背景图片获取结果: {backrop_image}")
+                except Exception as e:
+                    logger.warning(f"⚠️ 获取背景图片失败: {str(e)}")
+                    backrop_image = image
 
             # 统计种子操作信息
             torrent_cnt_msg = ""
-            if del_torrent_hashs:
+            if del_torrent_hashs and len(del_torrent_hashs) > 0:
                 torrent_cnt_msg += f"🗑️ 种子：{len(set(del_torrent_hashs))}个\n"
-            if stop_torrent_hashs:
+            if stop_torrent_hashs and len(stop_torrent_hashs) > 0:
                 stop_cnt = 0
                 # 排除已删除
                 for stop_hash in set(stop_torrent_hashs):
@@ -1443,19 +1473,19 @@ class SaMediaSyncDel(_PluginBase):
             # 获取媒体信息
             tmdb_info = None
             if tmdb_id:
-                mtype = media_type
                 try:
-                    tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=mtype)
-                    logger.debug(f"✅ 获取到TMDB信息: {tmdb_info.title if tmdb_info else '无'}")
+                    logger.debug(f"🔍 获取TMDB信息: tmdb_id={tmdb_id}")
+                    tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=media_type)
+                    logger.info(f"✅ 获取到TMDB信息: {tmdb_info.title if tmdb_info else '无'}")
                 except Exception as e:
                     logger.warning(f"⚠️ 获取TMDB信息失败: {str(e)}")
             
             media_year = tmdb_info.year if (tmdb_info and tmdb_info.year) else year
             
             show_title = tmdb_info.title if tmdb_info else media_name
-            if episode_num: 
+            if episode_num and episode_num != "None": 
                 show_title += f" ({media_year}) S{int(season_num):02d}E{int(episode_num):02d}"
-            elif season_num:
+            elif season_num and season_num != "None":
                 show_title += f" ({media_year}) S{int(season_num):02d}"
             else:
                 show_title += f" ({media_year})" if media_year else show_title
@@ -1483,18 +1513,23 @@ class SaMediaSyncDel(_PluginBase):
                 f"📁 路径：\n{media_path}\n"
             )
             
-            logger.debug(f"📋 通知内容:\n{notification_text}")
+            logger.info(f"📋 通知内容:\n{notification_text}")
             
             # 发送通知
-            self.post_message(
-                mtype=NotificationType.Plugin,
-                title=f"{media_emoji} {show_title} 已删除",
-                image=backrop_image,
-                text=notification_text,
-            )
-            
-            logger.info("✅ 通知发送成功")
-            
+            try:
+                logger.info(f"🚀 开始发送通知，标题: {show_title}")
+                self.post_message(
+                    mtype=NotificationType.Plugin,
+                    title=f"{media_emoji} {show_title} 已删除",
+                    image=backrop_image,
+                    text=notification_text,
+                )
+                
+                logger.info("✅ 通知发送成功")
+            except Exception as e:
+                logger.error(f"❌ 调用post_message发送通知失败: {str(e)}")
+                logger.error(traceback.format_exc())
+                
         except Exception as e:
             logger.error(f"❌ 发送通知失败: {str(e)}")
             logger.error(traceback.format_exc())
