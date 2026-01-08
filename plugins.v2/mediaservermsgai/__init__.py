@@ -58,8 +58,8 @@ class mediaservermsgai(_PluginBase):
     _last_event_cache: Tuple[Optional[Event], float] = (None, 0.0)  # 事件去重缓存
     _image_cache = {}                          # 图片URL缓存
     _overview_max_length = DEFAULT_OVERVIEW_MAX_LENGTH  # 简介最大长度
-    _filter_no_tmdb = False                    # 是否过滤TMDB未识别视频
-    _filter_play_events = False                # 是否过滤播放事件中的TMDB未识别视频
+    _filter_no_tmdb = False                    # 是否过滤TMDB找不到的资源
+    _filter_play_events = False                # 是否过滤播放事件中的TMDB找不到的资源
 
     # ==================== TV剧集消息聚合配置 ====================
     _aggregate_enabled = False                 # 是否启用TV剧集聚合功能
@@ -252,8 +252,8 @@ class mediaservermsgai(_PluginBase):
                     {
                         'component': 'VRow',
                         'content': [
-                            {'component': 'VCol', 'props': {'cols': 12, 'md': 6}, 'content': [{'component': 'VSwitch', 'props': {'model': 'filter_no_tmdb', 'label': '过滤TMDB未识别视频（入库事件）'}}]},
-                            {'component': 'VCol', 'props': {'cols': 12, 'md': 6}, 'content': [{'component': 'VSwitch', 'props': {'model': 'filter_play_events', 'label': '过滤TMDB未识别视频（播放事件）'}}]}
+                            {'component': 'VCol', 'props': {'cols': 12, 'md': 6}, 'content': [{'component': 'VSwitch', 'props': {'model': 'filter_no_tmdb', 'label': '过滤TMDB找不到的资源（入库事件）'}}]},
+                            {'component': 'VCol', 'props': {'cols': 12, 'md': 6}, 'content': [{'component': 'VSwitch', 'props': {'model': 'filter_play_events', 'label': '过滤TMDB找不到的资源（播放事件）'}}]}
                         ]
                     },
                     {
@@ -358,7 +358,7 @@ class mediaservermsgai(_PluginBase):
             # === 5. 检查TMDB资源过滤 ===
             # 检查是否应该过滤此事件
             if self._should_filter_event(event_info, event_type):
-                logger.info(f"过滤TMDB未识别视频: {event_info.item_name} (事件类型: {event_type})")
+                logger.info(f"过滤TMDB找不到的资源: {event_info.item_name} (事件类型: {event_type})")
                 return
 
             # === 6. 剧集聚合处理 (仅TV入库时) ===
