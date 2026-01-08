@@ -55,7 +55,7 @@ class MediaServerMsgAI(_PluginBase):
     plugin_name = "媒体服务器通知AI版"
     plugin_desc = "智能媒体服务器通知：TMDB元数据增强+剧集聚合+未识别过滤"
     plugin_icon = "mediaplay.png"
-    plugin_version = "2.0.0"
+    plugin_version = "1.8.0"
     plugin_author = "jxxghp"
     author_url = "https://github.com/jxxghp"
     plugin_config_prefix = "mediaservermsgai_"
