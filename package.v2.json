@@ -3,7 +3,7 @@
     "name": "媒体库服务器通知AI版",
     "description": "基于Emby识别结果+TMDB元数据+微信清爽版(全消息类型+剧集聚合)",
     "labels": "消息通知,媒体库",
-    "version": "1.8.0",
+    "version": "1.8.1",
     "icon": "mediaplay.png",
     "author": "jxxghp",
     "level": 1,
