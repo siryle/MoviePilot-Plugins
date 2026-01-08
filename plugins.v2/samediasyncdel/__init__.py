@@ -30,7 +30,7 @@ class SaMediaSyncDel(_PluginBase):
     # 插件图标
     plugin_icon = "mediasyncdel.png"
     # 插件版本
-    plugin_version = "1.0.7"
+    plugin_version = "1.1.0"
     # 插件作者
     plugin_author = "DDSRem,thsrite"
     # 作者主页
