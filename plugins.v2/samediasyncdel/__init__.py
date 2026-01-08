@@ -902,6 +902,11 @@ class SaMediaSyncDel(_PluginBase):
                 media_storage = "p115"
                 logger.info(f"匹配到115网盘存储，映射路径: {sub_paths}")
         
+        # 如果没有配置115路径映射，但路径以/115/开头，也认为是115网盘存储
+        if not media_storage and media_path.startswith("/115/"):
+            media_storage = "p115"
+            logger.info(f"路径以/115/开头，自动识别为115网盘存储")
+        
         # 然后检查本地存储
         if not media_storage and self._local_library_path:
             status, sub_paths = self.__get_local_media_path(media_path)
@@ -920,12 +925,12 @@ class SaMediaSyncDel(_PluginBase):
             logger.error(f"{media_name} 同步删除失败，未识别到储存类型")
             logger.error(f"请检查路径映射配置，当前路径: {media_path}")
             # 即使没有匹配到存储类型，如果开启了强制删除，也要尝试删除
-            if self._p115_force_delete_files:
+            if self._p115_force_delete_files and media_path.startswith("/115/"):
                 logger.warning(f"尝试强制删除115网盘文件: {media_path}")
                 media_storage = "p115"
-                # 尝试猜测映射路径
-                if "/115/" in media_path:
-                    parts = ["", media_path, media_path.replace("/115/", "/")]
+                # 使用默认映射
+                if media_path.startswith("/115/"):
+                    parts = ["/115", media_path, media_path.replace("/115/", "/")]
                 else:
                     parts = ["", media_path, media_path]
             else:
@@ -951,9 +956,9 @@ class SaMediaSyncDel(_PluginBase):
 
         # 单集或单季缺失 TMDB ID 获取
         if (episode_num or season_num) and (not tmdb_id or not str(tmdb_id).isdigit()):
-            tmdb_id = self.__get_series_tmdb_id(
-                json_object.get("Item", {}).get("SeriesId")
-            )
+            series_id = json_object.get("Item", {}).get("SeriesId")
+            if series_id:
+                tmdb_id = self.__get_series_tmdb_id(series_id)
 
         if not tmdb_id or not str(tmdb_id).isdigit():
             if not ((media_storage == "p115" and self._p115_force_delete_files) or 
@@ -1088,23 +1093,26 @@ class SaMediaSyncDel(_PluginBase):
         elif media_storage == "p115":
             mp_media_path = None
             # 处理路径映射
+            sub_paths = None
             if self._p115_library_path:
                 _, sub_paths = self.__get_p115_media_path(media_path)
-                if sub_paths:
-                    mp_media_path = media_path.replace(sub_paths[0], sub_paths[1]).replace(
-                        "\\", "/"
-                    )
-                    media_path = media_path.replace(sub_paths[0], sub_paths[2]).replace(
-                        "\\", "/"
-                    )
-                    logger.info(f"115路径映射: {sub_paths[0]} -> {sub_paths[1]} -> {sub_paths[2]}")
+            
+            if sub_paths:
+                mp_media_path = media_path.replace(sub_paths[0], sub_paths[1]).replace(
+                    "\\", "/"
+                )
+                media_path = media_path.replace(sub_paths[0], sub_paths[2]).replace(
+                    "\\", "/"
+                )
+                logger.info(f"115路径映射: {sub_paths[0]} -> {sub_paths[1]} -> {sub_paths[2]}")
             else:
-                # 如果没有配置映射，尝试猜测
-                if "/115/" in media_path:
+                # 如果没有配置映射，使用默认映射
+                if media_path.startswith("/115/"):
                     mp_media_path = media_path
-                    # 尝试将/115/路径映射到根目录
                     media_path = media_path.replace("/115/", "/")
-                    logger.info(f"使用猜测路径映射: {mp_media_path} -> {media_path}")
+                    logger.info(f"使用默认路径映射: {mp_media_path} -> {media_path}")
+                else:
+                    mp_media_path = media_path
 
             # 处理文件后缀
             media_path_2 = media_path
@@ -1123,6 +1131,7 @@ class SaMediaSyncDel(_PluginBase):
                     Path(media_path).parent
                     / str(Path(media_path).stem + "." + media_suffix)
                 )
+                logger.debug(f"文件后缀处理: {media_path} -> {media_path_2}")
 
             # 兼容重新整理的场景
             if mp_media_path and Path(mp_media_path).exists():
@@ -1141,7 +1150,7 @@ class SaMediaSyncDel(_PluginBase):
 
             # 如果没有msg使用媒体名称替代
             if not msg:
-                msg = media_name
+                msg = f"电影 {media_name} {tmdb_id}" if tmdb_id else f"电影 {media_name} None"
 
             logger.info(f"正在同步删除 {msg}")
 
@@ -1156,7 +1165,8 @@ class SaMediaSyncDel(_PluginBase):
                 )
                 # 如果没有msg使用媒体名称替代
                 if not msg:
-                    msg = media_name
+                    msg = f"电影 {media_name} {tmdb_id}" if tmdb_id else f"电影 {media_name} None"
+                    
                 if not transfer_history:
                     if self._p115_force_delete_files:
                         logger.warn(f"{media_name} 强制删除网盘媒体文件")
@@ -1402,16 +1412,21 @@ class SaMediaSyncDel(_PluginBase):
 
         # 发送消息
         if self._notify:
-            backrop_image = (
-                self.chain.obtain_specific_image(
-                    mediaid=tmdb_id,
-                    mtype=media_type_enum,
-                    image_type=MediaImageType.Backdrop,
-                    season=season_num,
-                    episode=episode_num,
-                )
-                or image
-            )
+            backrop_image = "https://emby.media/notificationicon.png"
+            if tmdb_id:
+                try:
+                    backrop_image = (
+                        self.chain.obtain_specific_image(
+                            mediaid=tmdb_id,
+                            mtype=media_type_enum,
+                            image_type=MediaImageType.Backdrop,
+                            season=season_num,
+                            episode=episode_num,
+                        )
+                        or backrop_image
+                    )
+                except Exception:
+                    pass
 
             torrent_cnt_msg = ""
             if del_torrent_hashs:
@@ -1476,14 +1491,20 @@ class SaMediaSyncDel(_PluginBase):
         history = self.get_data("history") or []
 
         # 获取poster
-        poster_image = (
-            self.chain.obtain_specific_image(
-                mediaid=tmdb_id,
-                mtype=media_type_enum,
-                image_type=MediaImageType.Poster,
-            )
-            or image
-        )
+        poster_image = "https://emby.media/notificationicon.png"
+        if tmdb_id:
+            try:
+                poster_image = (
+                    self.chain.obtain_specific_image(
+                        mediaid=tmdb_id,
+                        mtype=media_type_enum,
+                        image_type=MediaImageType.Poster,
+                    )
+                    or poster_image
+                )
+            except Exception:
+                pass
+                
         history.append(
             {
                 "type": media_type_enum.value,
@@ -1552,6 +1573,13 @@ class SaMediaSyncDel(_PluginBase):
             fileitem = self._storagechain.get_file_item(
                 storage="u115", path=Path(file_path)
             )
+            
+            # 检查fileitem是否为空
+            if not fileitem:
+                logger.error(f"无法获取115网盘文件信息: {file_path}")
+                logger.error("请检查文件路径是否正确，或者115网盘存储配置是否正确")
+                return
+                
             if fileitem.type == "dir":
                 # 删除整个文件夹
                 self._storagechain.delete_file(fileitem)
@@ -1577,6 +1605,13 @@ class SaMediaSyncDel(_PluginBase):
             fileitem = self._storagechain.get_file_item(
                 storage="123云盘", path=Path(file_path)
             )
+            
+            # 检查fileitem是否为空
+            if not fileitem:
+                logger.error(f"无法获取123云盘文件信息: {file_path}")
+                logger.error("请检查文件路径是否正确，或者123云盘存储配置是否正确")
+                return
+                
             if fileitem.type == "dir":
                 # 删除整个文件夹
                 self._storagechain.delete_file(fileitem)
