@@ -28,7 +28,6 @@ class mediaservermsgai(_PluginBase):
     4. 支持多种媒体服务器和丰富的消息类型配置
     5. 基于TMDB元数据增强消息内容（评分、分类、演员等）
     6. 支持音乐专辑和单曲入库通知
-    7. 自动过滤TMDB找不到的资源（可配置）
     """
 
     # ==================== 常量定义 ====================
@@ -58,8 +57,6 @@ class mediaservermsgai(_PluginBase):
     _last_event_cache: Tuple[Optional[Event], float] = (None, 0.0)  # 事件去重缓存
     _image_cache = {}                          # 图片URL缓存
     _overview_max_length = DEFAULT_OVERVIEW_MAX_LENGTH  # 简介最大长度
-    _filter_no_tmdb = False                    # 是否过滤TMDB找不到的资源
-    _filter_play_events = False                # 是否过滤播放事件中的TMDB找不到的资源
 
     # ==================== TV剧集消息聚合配置 ====================
     _aggregate_enabled = False                 # 是否启用TV剧集聚合功能
@@ -133,8 +130,6 @@ class mediaservermsgai(_PluginBase):
             self._aggregate_enabled = config.get("aggregate_enabled", False)
             self._aggregate_time = int(config.get("aggregate_time", self.DEFAULT_AGGREGATE_TIME))
             self._smart_category_enabled = config.get("smart_category_enabled", True)
-            self._filter_no_tmdb = config.get("filter_no_tmdb", False)
-            self._filter_play_events = config.get("filter_play_events", False)
 
     def service_infos(self, type_filter: Optional[str] = None) -> Optional[Dict[str, ServiceInfo]]:
         """
@@ -251,13 +246,6 @@ class mediaservermsgai(_PluginBase):
                     },
                     {
                         'component': 'VRow',
-                        'content': [
-                            {'component': 'VCol', 'props': {'cols': 12, 'md': 6}, 'content': [{'component': 'VSwitch', 'props': {'model': 'filter_no_tmdb', 'label': '过滤TMDB找不到的资源（入库事件）'}}]},
-                            {'component': 'VCol', 'props': {'cols': 12, 'md': 6}, 'content': [{'component': 'VSwitch', 'props': {'model': 'filter_play_events', 'label': '过滤TMDB找不到的资源（播放事件）'}}]}
-                        ]
-                    },
-                    {
-                        'component': 'VRow',
                         'props': {'show': '{{aggregate_enabled}}'},
                         'content': [
                             {'component': 'VCol', 'props': {'cols': 12, 'md': 6}, 'content': [{'component': 'VTextField', 'props': {'model': 'aggregate_time', 'label': '聚合等待时间（秒）', 'placeholder': '15', 'type': 'number'}}]}
@@ -270,9 +258,7 @@ class mediaservermsgai(_PluginBase):
             "types": [], 
             "aggregate_enabled": False, 
             "aggregate_time": self.DEFAULT_AGGREGATE_TIME,
-            "smart_category_enabled": True,
-            "filter_no_tmdb": False,
-            "filter_play_events": False
+            "smart_category_enabled": True
         }
     
     def get_page(self) -> List[dict]:
@@ -355,13 +341,7 @@ class mediaservermsgai(_PluginBase):
                 self._handle_music_album(event_info, event_info.json_object.get('Item', {}))
                 return
 
-            # === 5. 检查TMDB资源过滤 ===
-            # 检查是否应该过滤此事件
-            if self._should_filter_event(event_info, event_type):
-                logger.info(f"过滤TMDB找不到的资源: {event_info.item_name} (事件类型: {event_type})")
-                return
-
-            # === 6. 剧集聚合处理 (仅TV入库时) ===
+            # === 5. 剧集聚合处理 (仅TV入库时) ===
             if (self._aggregate_enabled and 
                 event_type == "library.new" and 
                 event_info.item_type in ["TV", "SHOW"]):
@@ -372,82 +352,12 @@ class mediaservermsgai(_PluginBase):
                     self._aggregate_tv_episodes(series_id, event_info, event)
                     return
 
-            # === 7. 常规媒体消息 (电影入库、播放开始/停止、单集入库、单曲入库等) ===
+            # === 6. 常规媒体消息 (电影入库、播放开始/停止、单集入库、单曲入库等) ===
             self._process_media_event(event, event_info)
 
         except Exception as e:
             logger.error(f"Webhook分发异常: {str(e)}")
             logger.error(traceback.format_exc())
-
-    def _should_filter_event(self, event_info: WebhookEventInfo, event_type: str) -> bool:
-        """
-        检查是否应该过滤此事件（基于TMDB资源查找）
-        
-        Args:
-            event_info: Webhook事件信息
-            event_type: 事件类型
-            
-        Returns:
-            bool: True表示应该过滤，False表示不应该过滤
-        """
-        # 跳过不需要TMDB查找的事件类型
-        skip_filter_events = [
-            "system.webhooktest",
-            "system.notificationtest",
-            "user.authenticated",
-            "user.authenticationfailed",
-            "item.rate",
-            "item.markplayed",
-            "item.markunplayed"
-        ]
-        
-        if event_type in skip_filter_events:
-            return False
-        
-        # 检查是否是音频文件（音乐）
-        if event_info.item_type == "AUD":
-            logger.debug(f"音频文件跳过TMDB过滤: {event_info.item_name}")
-            return False
-        
-        # 检查是否是播放事件且未开启播放事件过滤
-        is_play_event = any(play_key in event_type for play_key in ["playback", "media.play", "media.stop", "Playback"])
-        if is_play_event and not self._filter_play_events:
-            logger.debug(f"播放事件跳过TMDB过滤: {event_info.item_name}")
-            return False
-        
-        # 检查是否是入库事件且未开启入库事件过滤
-        is_library_event = "library.new" in event_type
-        if is_library_event and not self._filter_no_tmdb:
-            logger.debug(f"入库事件跳过TMDB过滤: {event_info.item_name}")
-            return False
-        
-        # 尝试获取TMDB ID
-        tmdb_id = self._extract_tmdb_id(event_info)
-        if not tmdb_id:
-            logger.debug(f"未找到TMDB ID: {event_info.item_name}")
-            return True  # 没有TMDB ID，过滤掉
-        
-        # 根据媒体类型尝试从TMDB获取信息
-        try:
-            if event_info.item_type == "MOV":
-                tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=MediaType.MOVIE)
-            elif event_info.item_type in ["TV", "SHOW"]:
-                tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=MediaType.TV)
-            else:
-                logger.debug(f"未知的媒体类型: {event_info.item_type}")
-                return False
-            
-            # 检查TMDB信息是否有效
-            if not tmdb_info or not hasattr(tmdb_info, 'id') or not tmdb_info.id:
-                logger.debug(f"TMDB找不到此资源: {event_info.item_name} (TMDB ID: {tmdb_id})")
-                return True
-                
-            logger.debug(f"TMDB找到资源: {event_info.item_name} (TMDB ID: {tmdb_id})")
-            return False
-            
-        except Exception as e:
-            logger.debug(f"查询TMDB信息失败: {str(e)}")
-            return True  # 查询失败，过滤掉
 
     def _handle_test_event(self, event_info: WebhookEventInfo):
         """
@@ -514,26 +424,6 @@ class mediaservermsgai(_PluginBase):
         Args:
             event_info (WebhookEventInfo): Webhook事件信息
         """
-        # 检查是否应该过滤（评分事件也需要检查TMDB）
-        if self._filter_no_tmdb and event_info.item_type in ["MOV", "TV", "SHOW"]:
-            tmdb_id = self._extract_tmdb_id(event_info)
-            if not tmdb_id:
-                logger.info(f"过滤评分事件（无TMDB ID）: {event_info.item_name}")
-                return
-            
-            try:
-                if event_info.item_type == "MOV":
-                    tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=MediaType.MOVIE)
-                else:
-                    tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=MediaType.TV)
-                
-                if not tmdb_info or not hasattr(tmdb_info, 'id') or not tmdb_info.id:
-                    logger.info(f"过滤评分事件（TMDB找不到资源）: {event_info.item_name}")
-                    return
-            except Exception:
-                logger.info(f"过滤评分事件（TMDB查询失败）: {event_info.item_name}")
-                return
-        
         item_name = event_info.item_name
             
         title = f"⭐ 用户评分：{item_name}"
@@ -578,24 +468,11 @@ class mediaservermsgai(_PluginBase):
         tmdb_id = self._extract_tmdb_id(event_info)
         event_info.tmdb_id = tmdb_id
         
-        # 3. 双重验证TMDB信息（确保之前过滤检查通过）
-        tmdb_info = None
-        if tmdb_id:
-            mtype = MediaType.MOVIE if event_info.item_type == "MOV" else MediaType.TV
-            try:
-                tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=mtype)
-                if not tmdb_info or not hasattr(tmdb_info, 'id') or not tmdb_info.id:
-                    logger.debug(f"TMDB信息无效，跳过发送消息: {event_info.item_name}")
-                    return
-            except Exception as e:
-                logger.debug(f"获取TMDB信息失败，跳过发送消息: {str(e)}")
-                return
-        
         message_texts = []
         message_title = ""
         image_url = event_info.image_url
         
-        # 4. 音频单曲特殊处理
+        # 3. 音频单曲特殊处理
         if event_info.item_type == "AUD":
             self._build_audio_message(event_info, message_texts)
             # 标题构造
@@ -609,10 +486,19 @@ class mediaservermsgai(_PluginBase):
             img = self._get_audio_image_url(event_info.server_name, event_info.json_object.get('Item', {}))
             if img: image_url = img
 
-        # 5. 视频处理 (TV/MOV)
+        # 4. 视频处理 (TV/MOV)
         else:
+            tmdb_info = None
+            if tmdb_id:
+                mtype = MediaType.MOVIE if event_info.item_type == "MOV" else MediaType.TV
+                try:
+                    tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=mtype)
+                except Exception: pass
+
             # 标题构造
             title_name = event_info.item_name
+            #if event_info.item_type in ["TV", "SHOW"] and event_info.json_object:
+                #title_name = event_info.json_object.get('Item', {}).get('SeriesName') or title_name
             
             year = tmdb_info.year if (tmdb_info and tmdb_info.year) else event_info.json_object.get('Item', {}).get('ProductionYear')
             if year and str(year) not in title_name:
@@ -623,9 +509,20 @@ class mediaservermsgai(_PluginBase):
             action_text = f"{type_cn}{action_base}"
             server_name = self._get_server_name_cn(event_info)
 
+            # 超链处理
+            tmdb_url = ""
+            if tmdb_id:
+                media_type_url = "movie" if event_info.item_type == "MOV" else "tv"
+                tmdb_url = f"https://www.themoviedb.org/{media_type_url}/{tmdb_id}"
+
+            #if tmdb_url:
+                #message_title = f"[{title_name}]({tmdb_url}) {action_text} {server_name}"
+            #else:
+                #message_title = f"{title_name} {action_text} {server_name}"
             message_title = f"🆕 {title_name} {action_base}"
 
             # 内容构造
+            #message_texts.append(f"⏰ {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
             message_texts.append(f"⏰ 时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}")
             
             # 智能分类（优先使用CategoryHelper，fallback到路径解析）
@@ -658,6 +555,8 @@ class mediaservermsgai(_PluginBase):
             if overview:
                 if len(overview) > self._overview_max_length:
                     overview = overview[:self._overview_max_length].rstrip() + "..."
+                #message_texts.append("\n━━━━━━━━━━━━━━━━━━\n") 
+                #message_texts.append(f"📖 剧情简介\n{overview}")
                 message_texts.append(f"📖 简介：\n{overview}")
 
             # 图片
@@ -667,23 +566,23 @@ class mediaservermsgai(_PluginBase):
                 elif event_info.item_type == "MOV" and tmdb_id:
                     image_url = self._get_tmdb_image(event_info, MediaType.MOVIE)
 
-        # 6. 附加信息（用户、进度等）
+        # 5. 附加信息（用户、进度等）
         self._append_extra_info(message_texts, event_info)
         
-        # 7. 播放链接
+        # 6. 播放链接
         play_link = self._get_play_link(event_info)
 
-        # 8. 兜底图片
+        # 7. 兜底图片
         if not image_url:
             image_url = self._webhook_images.get(event_info.channel)
 
-        # 9. 缓存管理（用于过滤重复停止事件）
+        # 8. 缓存管理（用于过滤重复停止事件）
         if str(event_info.event) == "playback.stop":
             self._add_key_cache(expiring_key)
         if str(event_info.event) == "playback.start":
             self._remove_key_cache(expiring_key)
 
-        # 10. 发送
+        # 9. 发送
         self.post_message(
             mtype=NotificationType.MediaServer,
             title=message_title,
@@ -738,14 +637,9 @@ class mediaservermsgai(_PluginBase):
 
         if not msg_list: return
         
-        # 单条直接回退到常规处理（但需要重新检查TMDB过滤）
+        # 单条直接回退到常规处理
         if len(msg_list) == 1:
-            event_info, event_obj = msg_list[0]
-            # 检查TMDB过滤
-            if not self._should_filter_event(event_info, "library.new"):
-                self._process_media_event(event_obj, event_info)
-            else:
-                logger.info(f"过滤单条剧集聚合消息（TMDB找不到资源）: {event_info.item_name}")
+            self._process_media_event(msg_list[0][1], msg_list[0][0])
             return
 
         # 多条聚合
@@ -753,24 +647,14 @@ class mediaservermsgai(_PluginBase):
         events_info = [x[0] for x in msg_list]
         count = len(events_info)
 
-        # 检查TMDB信息
         tmdb_id = self._extract_tmdb_id(first_info)
-        if not tmdb_id and self._filter_no_tmdb:
-            logger.info(f"过滤剧集聚合消息（无TMDB ID）: {first_info.item_name}")
-            return
-        
         first_info.tmdb_id = tmdb_id
         
         tmdb_info = None
         if tmdb_id:
             try:
                 tmdb_info = self.chain.recognize_media(tmdbid=int(tmdb_id), mtype=MediaType.TV)
-                if not tmdb_info or not hasattr(tmdb_info, 'id') or not tmdb_info.id:
-                    logger.info(f"过滤剧集聚合消息（TMDB找不到资源）: {first_info.item_name}")
-                    return
-            except Exception:
-                logger.info(f"过滤剧集聚合消息（TMDB查询失败）: {first_info.item_name}")
-                return
+            except: pass
 
         title_name = first_info.item_name
         if first_info.json_object:
@@ -781,6 +665,13 @@ class mediaservermsgai(_PluginBase):
             title_name += f" ({year})"
         
         server_name = self._get_server_name_cn(first_info)
+        tmdb_url = f"https://www.themoviedb.org/tv/{tmdb_id}" if tmdb_id else ""
+
+        
+        #if tmdb_url:
+            #message_title = f"[{title_name}]({tmdb_url}) 已入库 (含{count}个文件) {server_name}"
+        #else:
+            #message_title = f"{title_name} 已入库 (含{count}个文件) {server_name}"
         message_title = f"🆕 {title_name} 已入库 (含{count}个文件)"
 
         message_texts = []
@@ -813,7 +704,8 @@ class mediaservermsgai(_PluginBase):
         if overview:
             if len(overview) > self._overview_max_length:
                 overview = overview[:self._overview_max_length].rstrip() + "..."
-            message_texts.append(f"📖 简介：\n{overview}")
+            message_texts.append("\n━━━━━━━━━━━━━━━━━━\n") 
+            message_texts.append(f"📖 剧情简介\n{overview}")
 
         image_url = first_info.image_url
         if not image_url and tmdb_id:
@@ -1043,6 +935,13 @@ class mediaservermsgai(_PluginBase):
             texts.append(f"⭐️ 评分：{round(float(tmdb_info.vote_average), 1)}/10")
         
         region = self._get_region_text_cn(tmdb_info)
+        #if region:
+            #texts.append(f"🏳️ 地区：{region}")
+
+        #if hasattr(tmdb_info, 'status') and tmdb_info.status:
+            #status_map = {'Ended': '已完结', 'Returning Series': '连载中', 'Canceled': '已取消', 'In Production': '制作中', 'Planned': '计划中', 'Released': '已上映', 'Continuing': '连载中'}
+            #status_text = status_map.get(tmdb_info.status, tmdb_info.status)
+            #texts.append(f"📡 状态：{status_text}")
 
     def _get_region_text_cn(self, tmdb_info) -> str:
         if not tmdb_info: return ""
@@ -1064,6 +963,7 @@ class mediaservermsgai(_PluginBase):
         if not tmdb_info: return
         if hasattr(tmdb_info, 'genres') and tmdb_info.genres:
             genres = [g.get('name') if isinstance(g, dict) else str(g) for g in tmdb_info.genres[:3]]
+            #if genres: texts.append(f"🎭 类型：{'、'.join(genres)}")
         
         if hasattr(tmdb_info, 'actors') and tmdb_info.actors:
             actors = [a.get('name') if isinstance(a, dict) else str(a) for a in tmdb_info.actors[:3]]
