@@ -40,13 +40,13 @@ from app.plugins.mediacovergenerator.static.multi_1  import multi_1
 
 class MediaCoverGenerator(_PluginBase):
     # 插件名称
-    plugin_name = "媒体库封面生成"
+    plugin_name = "媒体库封面生成AI版"
     # 插件描述
     plugin_desc = "自动生成媒体库封面，支持 Emby，Jellyfin"
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/icons/emby.png"
     # 插件版本
-    plugin_version = "0.8.8"  # 更新版本号
+    plugin_version = "0.9.0"  # 更新版本号
     # 插件作者
     plugin_author = "justzerock"
     # 作者主页
