@@ -631,10 +631,9 @@ class mediaservermsgai(_PluginBase):
                 action_base = self._webhook_actions.get(event_info.event, "通知")
                 logger.debug(f"事件动作: {action_base}")
 
-                self._append_season_episode_info(message_texts, event_info, title_name)
                 # 根据事件类型设置不同的标题前缀
                 if "library.new" in event_info.event:
-                    message_title = f"🆕 {title_name} {first_line}已入库"
+                    message_title = f"🆕 {title_name} 已入库"
                 elif "playback.start" in event_info.event or "media.play" in event_info.event or "PlaybackStart" in event_info.event:
                     message_title = f"▶️ 开始播放：{title_name}"
                 elif "playback.stop" in event_info.event or "media.stop" in event_info.event or "PlaybackStop" in event_info.event:
@@ -675,6 +674,7 @@ class mediaservermsgai(_PluginBase):
                 if category:
                     message_texts.append(f"📂 分类：{category}")
 
+                self._append_season_episode_info(message_texts, event_info, title_name)
                 self._append_meta_info(message_texts, tmdb_info)
                 self._append_genres_actors(message_texts, tmdb_info)
 
@@ -1351,9 +1351,8 @@ class mediaservermsgai(_PluginBase):
         elif description := event_info.json_object.get('Description'):
             first_line = description.split('\n\n')[0].strip()
             if re.search(r'S\d+\s+E\d+', first_line):
-                 #texts.append(f"📺 季集：{first_line}")
+                 texts.append(f"📺 季集：{first_line}")
                  logger.debug(f"从描述提取季集: {first_line}")
-                 first_line += f" "
 
     def _append_extra_info(self, texts: List[str], event_info: WebhookEventInfo):
         """追加额外信息"""
