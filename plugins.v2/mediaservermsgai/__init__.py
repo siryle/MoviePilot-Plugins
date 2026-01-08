@@ -41,7 +41,7 @@ class mediaservermsgai(_PluginBase):
     plugin_name = "媒体库服务器通知AI版"
     plugin_desc = "基于Emby识别结果+TMDB元数据+微信清爽版(全消息类型+剧集聚合)"
     plugin_icon = "mediaplay.png"
-    plugin_version = "1.8.1"
+    plugin_version = "1.8.0"
     plugin_author = "jxxghp"
     author_url = "https://github.com/jxxghp"
     plugin_config_prefix = "mediaservermsgai_"
@@ -813,8 +813,7 @@ class mediaservermsgai(_PluginBase):
         if overview:
             if len(overview) > self._overview_max_length:
                 overview = overview[:self._overview_max_length].rstrip() + "..."
-            message_texts.append("\n━━━━━━━━━━━━━━━━━━\n") 
-            message_texts.append(f"📖 剧情简介\n{overview}")
+            message_texts.append(f"📖 简介：\n{overview}")
 
         image_url = first_info.image_url
         if not image_url and tmdb_id:
