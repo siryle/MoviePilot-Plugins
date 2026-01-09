@@ -372,7 +372,7 @@ class DockerCopilotHelper(_PluginBase):
             logger.debug(f'result---{result}')
             data = result.json()
             if data["code"] == 200:
-                logger.error(f"DC-清理镜像成功: {sha}")
+                logger.info(f"DC-清理镜像成功: {sha}")
                 return True
             else:
                 logger.error(f"DC-清理镜像异常 Error code: {data['code']}, message: {data['msg']}")
