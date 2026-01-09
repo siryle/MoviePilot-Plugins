@@ -71,5 +71,21 @@
             "v0.2": "测试",
             "v0.1": "自定义字体"
         }
-    }
+    },
+    "DockerCopilotHelper": {
+        "name": "DC助手AI版",
+        "description": "配合DockerCopilot,完成更新通知、自动更改、自动备份功能",
+        "labels": "docker,容器,更新",
+        "version": "2.0.0",
+        "icon": "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/icons/Docker_Copilot.png",
+        "author": "gxterry",
+        "level": 1,
+        "history": {
+            "v2.0.0": "AI处理生成v2插件",
+            "v1.2.0": "AI修复未开启自动更新通知时依旧会收到通知",
+            "v1.1.2": "修复网络异常导致的数据无法加载问题",
+            "v1.1.1": "修复面板加载异常"
+        },
+        "v2": true
+  }
 }
