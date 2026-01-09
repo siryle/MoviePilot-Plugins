@@ -1,5 +1,5 @@
 """
-DockerCopilotHelper V2 版本 - 单文件版本
+DockerCopilotHelper V2 版本
 """
 from datetime import datetime, timedelta
 from typing import Optional, Any, List, Dict, Tuple
@@ -42,22 +42,22 @@ class PluginConfig:
     secretKey: str = ""
     
     # 更新通知
-    update_cron: Optional[str] = None
-    updatable_list: List[str] = field(default_factory=list)
-    updatable_notify: bool = False
+    updatecron: Optional[str] = None
+    updatablelist: List[str] = field(default_factory=list)
+    updatablenotify: bool = False
     
     # 自动更新
-    auto_update_cron: Optional[str] = None
-    auto_update_list: List[str] = field(default_factory=list)
-    auto_update_notify: bool = False
-    schedule_report: bool = False
-    delete_images: bool = False
+    autoupdatecron: Optional[str] = None
+    autoupdatelist: List[str] = field(default_factory=list)
+    autoupdatenotify: bool = False
+    schedulereport: bool = False
+    deleteimages: bool = False
     interval: int = 10
     intervallimit: int = 6
     
     # 备份
-    backup_cron: Optional[str] = None
-    backups_notify: bool = False
+    backupcron: Optional[str] = None
+    backupsnotify: bool = False
 
 
 class DockerCopilotHelper(_PluginBase):
@@ -85,9 +85,6 @@ class DockerCopilotHelper(_PluginBase):
         self.config = PluginConfig()
         self._scheduler: Optional[BackgroundScheduler] = None
         self._running_tasks: Dict[str, Any] = {}
-        
-        # 版本检测
-        self.is_v2 = hasattr(settings, 'VERSION_FLAG') and settings.VERSION_FLAG == "v2"
 
     def init_plugin(self, config: dict = None):
         """初始化插件"""
@@ -96,29 +93,7 @@ class DockerCopilotHelper(_PluginBase):
         
         # 加载配置
         if config:
-            # 适配字段名
-            adapted_config = {}
-            for key, value in config.items():
-                # 将V1的字段名映射到V2
-                field_mapping = {
-                    "updatecron": "update_cron",
-                    "updatablelist": "updatable_list",
-                    "updatablenotify": "updatable_notify",
-                    "autoupdatecron": "auto_update_cron",
-                    "autoupdatelist": "auto_update_list",
-                    "autoupdatenotify": "auto_update_notify",
-                    "schedulereport": "schedule_report",
-                    "deleteimages": "delete_images",
-                    "backupcron": "backup_cron",
-                    "backupsnotify": "backups_notify",
-                    "intervallimit": "interval_limit",
-                    "interval": "interval"
-                }
-                
-                new_key = field_mapping.get(key, key)
-                adapted_config[new_key] = value
-            
-            self.config = PluginConfig(**adapted_config)
+            self.config = PluginConfig(**config)
             
             # 检查必要配置
             if not self.config.secretKey or not self.config.host:
@@ -135,7 +110,7 @@ class DockerCopilotHelper(_PluginBase):
                 self.config.onlyonce = False
                 self._save_config()
             
-            logger.info(f"DC助手插件已初始化，版本: {'V2' if self.is_v2 else 'V1兼容'}")
+            logger.info(f"DC助手插件已初始化")
 
     def _get_jwt_token(self) -> str:
         """获取JWT令牌"""
@@ -296,14 +271,14 @@ class DockerCopilotHelper(_PluginBase):
         self._scheduler = BackgroundScheduler(timezone=settings.TZ)
         
         # 备份任务
-        if self.config.backup_cron:
+        if self.config.backupcron:
             try:
                 self._scheduler.add_job(
                     func=self._backup_containers,
-                    trigger=CronTrigger.from_crontab(self.config.backup_cron),
+                    trigger=CronTrigger.from_crontab(self.config.backupcron),
                     name="DC助手-备份"
                 )
-                logger.info(f"DC助手备份任务已安排: {self.config.backup_cron}")
+                logger.info(f"DC助手备份任务已安排: {self.config.backupcron}")
             except Exception as e:
                 logger.error(f"备份任务配置错误: {str(e)}")
                 self.post_message(
@@ -313,14 +288,14 @@ class DockerCopilotHelper(_PluginBase):
                 )
         
         # 更新通知任务
-        if self.config.update_cron:
+        if self.config.updatecron:
             try:
                 self._scheduler.add_job(
                     func=self._check_updates,
-                    trigger=CronTrigger.from_crontab(self.config.update_cron),
+                    trigger=CronTrigger.from_crontab(self.config.updatecron),
                     name="DC助手-更新通知"
                 )
-                logger.info(f"DC助手更新通知任务已安排: {self.config.update_cron}")
+                logger.info(f"DC助手更新通知任务已安排: {self.config.updatecron}")
             except Exception as e:
                 logger.error(f"更新通知任务配置错误: {str(e)}")
                 self.post_message(
@@ -330,14 +305,14 @@ class DockerCopilotHelper(_PluginBase):
                 )
         
         # 自动更新任务
-        if self.config.auto_update_cron:
+        if self.config.autoupdatecron:
             try:
                 self._scheduler.add_job(
                     func=self._auto_update,
-                    trigger=CronTrigger.from_crontab(self.config.auto_update_cron),
+                    trigger=CronTrigger.from_crontab(self.config.autoupdatecron),
                     name="DC助手-自动更新"
                 )
-                logger.info(f"DC助手自动更新任务已安排: {self.config.auto_update_cron}")
+                logger.info(f"DC助手自动更新任务已安排: {self.config.autoupdatecron}")
             except Exception as e:
                 logger.error(f"自动更新任务配置错误: {str(e)}")
                 self.post_message(
@@ -355,7 +330,7 @@ class DockerCopilotHelper(_PluginBase):
         """立即运行一次所有任务"""
         logger.info("DC助手立即执行一次所有任务")
         
-        if self.config.backup_cron:
+        if self.config.backupcron:
             self._scheduler.add_job(
                 func=self._backup_containers,
                 trigger='date',
@@ -363,7 +338,7 @@ class DockerCopilotHelper(_PluginBase):
                 name="DC助手-立即备份"
             )
         
-        if self.config.update_cron:
+        if self.config.updatecron:
             self._scheduler.add_job(
                 func=self._check_updates,
                 trigger='date',
@@ -371,7 +346,7 @@ class DockerCopilotHelper(_PluginBase):
                 name="DC助手-立即检查更新"
             )
         
-        if self.config.auto_update_cron:
+        if self.config.autoupdatecron:
             self._scheduler.add_job(
                 func=self._auto_update,
                 trigger='date',
@@ -386,7 +361,7 @@ class DockerCopilotHelper(_PluginBase):
         containers = self.get_containers()
         updatable_containers = [
             container for container in containers
-            if container.haveUpdate and container.name in self.config.updatable_list
+            if container.haveUpdate and container.name in self.config.updatablelist
         ]
         
         for container in updatable_containers:
@@ -421,14 +396,14 @@ class DockerCopilotHelper(_PluginBase):
         logger.info("DC助手开始自动更新容器")
         
         # 清理未使用的镜像
-        if self.config.delete_images:
+        if self.config.deleteimages:
             self._cleanup_unused_images()
         
         # 获取容器列表
         containers = self.get_containers()
         
         # 更新选中的容器
-        for container_name in self.config.auto_update_list:
+        for container_name in self.config.autoupdatelist:
             container = next(
                 (c for c in containers if c.name == container_name and c.haveUpdate),
                 None
@@ -459,7 +434,7 @@ class DockerCopilotHelper(_PluginBase):
             )
             
             if task:
-                if self.config.auto_update_notify:
+                if self.config.autoupdatenotify:
                     self.post_message(
                         mtype=NotificationType.Plugin,
                         title="【DC助手-自动更新】",
@@ -467,7 +442,7 @@ class DockerCopilotHelper(_PluginBase):
                     )
                 
                 # 跟踪进度
-                if self.config.schedule_report:
+                if self.config.schedulereport:
                     self._track_update_progress(task)
             else:
                 logger.error(f"创建更新任务失败: {container.name}")
@@ -481,7 +456,7 @@ class DockerCopilotHelper(_PluginBase):
             try:
                 progress = self.get_update_progress(task.get('taskID', ''))
                 
-                if self.config.auto_update_notify:
+                if self.config.autoupdatenotify:
                     self.post_message(
                         mtype=NotificationType.Plugin,
                         title="【DC助手-更新进度】",
@@ -530,7 +505,7 @@ class DockerCopilotHelper(_PluginBase):
         success = self.backup_containers()
         
         if success:
-            if self.config.backups_notify:
+            if self.config.backupsnotify:
                 self.post_message(
                     mtype=NotificationType.Plugin,
                     title="【DC助手-备份成功】",
@@ -538,7 +513,7 @@ class DockerCopilotHelper(_PluginBase):
                 )
             logger.info("容器备份成功")
         else:
-            if self.config.backups_notify:
+            if self.config.backupsnotify:
                 self.post_message(
                     mtype=NotificationType.Plugin,
                     title="【DC助手 备份失败】",
@@ -548,37 +523,7 @@ class DockerCopilotHelper(_PluginBase):
 
     def _save_config(self):
         """保存配置"""
-        # 反向映射回V1字段名
-        config_dict = {}
-        for field, value in self.config.__dict__.items():
-            if field == "update_cron":
-                config_dict["updatecron"] = value
-            elif field == "updatable_list":
-                config_dict["updatablelist"] = value
-            elif field == "updatable_notify":
-                config_dict["updatablenotify"] = value
-            elif field == "auto_update_cron":
-                config_dict["autoupdatecron"] = value
-            elif field == "auto_update_list":
-                config_dict["autoupdatelist"] = value
-            elif field == "auto_update_notify":
-                config_dict["autoupdatenotify"] = value
-            elif field == "schedule_report":
-                config_dict["schedulereport"] = value
-            elif field == "delete_images":
-                config_dict["deleteimages"] = value
-            elif field == "backup_cron":
-                config_dict["backupcron"] = value
-            elif field == "backups_notify":
-                config_dict["backupsnotify"] = value
-            elif field == "intervallimit":
-                config_dict["intervallimit"] = value
-            elif field == "interval":
-                config_dict["interval"] = value
-            else:
-                config_dict[field] = value
-        
-        self.update_config(config_dict)
+        self.update_config(self.config.__dict__)
 
     def get_state(self) -> bool:
         """获取插件状态"""
@@ -600,7 +545,7 @@ class DockerCopilotHelper(_PluginBase):
             self._auto_update()
 
     def get_form(self) -> Tuple[List[dict], Dict[str, Any]]:
-        """获取配置表单 - V2版本需要返回两个值"""
+        """获取配置表单"""
         # 动态获取容器列表
         updatable_list = []
         auto_update_list = []
@@ -610,16 +555,16 @@ class DockerCopilotHelper(_PluginBase):
             container_names = [c.name for c in containers]
             
             # 清理无效的配置项
-            self.config.updatable_list = [
-                name for name in self.config.updatable_list 
+            self.config.updatablelist = [
+                name for name in self.config.updatablelist 
                 if name in container_names
             ]
-            self.config.auto_update_list = [
-                name for name in self.config.auto_update_list 
+            self.config.autoupdatelist = [
+                name for name in self.config.autoupdatelist 
                 if name in container_names
             ]
             
-            if self.config.updatable_list or self.config.auto_update_list:
+            if self.config.updatablelist or self.config.autoupdatelist:
                 self._save_config()
             
             for container in containers:
@@ -627,416 +572,367 @@ class DockerCopilotHelper(_PluginBase):
                 auto_update_list.append({"title": container.name, "value": container.name})
         
         # 表单配置
-        form_items = [
+        return [
             {
-                'component': 'VRow',
-                'content': [
+                "component": "VForm",
+                "content": [
                     {
-                        'component': 'VCol',
-                        'props': {
-                            'cols': 12,
-                            'md': 6
-                        },
+                        'component': 'VRow', 
                         'content': [
                             {
-                                'component': 'VSwitch',
-                                'props': {
-                                    'model': 'enabled',
-                                    'label': '启用插件',
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        'component': 'VCol',
-                        'props': {
-                            'cols': 12,
-                            'md': 6
-                        },
-                        'content': [
-                            {
-                                'component': 'VSwitch',
-                                'props': {
-                                    'model': 'onlyonce',
-                                    'label': '立即运行一次',
-                                }
-                            }
-                        ]
-                    }
-                ]
-            }, {
-                'component': 'VRow',
-                'content': [
-                    {
-                        'component': 'VCol',
-                        'props': {
-                            'cols': 12,
-                            'md': 6
-                        },
-                        'content': [
-                            {
-                                'component': 'VTextField',
-                                'props': {
-                                    'model': 'host',
-                                    'label': '服务器地址',
-                                    'placeholder': 'http://127.0.0.1:端口',
-                                    'hint': 'dockerCopilot服务地址 http(s)://ip:端口'
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        'component': 'VCol',
-                        'props': {
-                            'cols': 12,
-                            'md': 6
-                        },
-                        'content': [
-                            {
-                                'component': 'VTextField',
-                                'props': {
-                                    'model': 'secretKey',
-                                    'label': 'secretKey',
-                                    'type': 'password',
-                                    'hint': 'dockerCopilot秘钥 环境变量查看'
-                                }
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                'component': 'VTabs',
-                'props': {
-                    'model': '_tabs',
-                    'height': 40,
-                    'style': {
-                        'margin-top': '20px',
-                        'margin-bottom': '60px',
-                        'margin-right': '30px'
-                    }
-                },
-                'content': [{
-                    'component': 'VTab',
-                    'props': {'value': 'C1'},
-                    'text': '更新通知'
-                },
-                    {
-                        'component': 'VTab',
-                        'props': {'value': 'C2'},
-                        'text': '自动更新'
-                    },
-                    {
-                        'component': 'VTab',
-                        'props': {'value': 'C3'},
-                        'text': '自动备份'
-                    }
-                ]
-            },
-            {
-                'component': 'VWindow',
-                'props': {
-                    'model': '_tabs'
-                },
-                'content': [{
-                    'component': 'VWindowItem',
-                    'props': {
-                        'value': 'C1', 'style': {'margin-top': '30px'}
-                    },
-                    'content': [{
-                        'component': 'VRow',
-                        'content': [
-                            {
-                                'component': 'VCol',
-                                'props': {
-                                    'cols': 12,
-                                    'md': 6
-                                },
+                                'component': 'VCol', 
+                                'props': {'cols': 12, 'md': 6}, 
                                 'content': [
                                     {
-                                        'component': 'VTextField',
+                                        'component': 'VSwitch', 
+                                        'props': {'model': 'enabled', 'label': '启用插件'}
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VCol', 
+                                'props': {'cols': 12, 'md': 6}, 
+                                'content': [
+                                    {
+                                        'component': 'VSwitch', 
+                                        'props': {'model': 'onlyonce', 'label': '立即运行一次'}
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        'component': 'VRow', 
+                        'content': [
+                            {
+                                'component': 'VCol', 
+                                'props': {'cols': 12, 'md': 6}, 
+                                'content': [
+                                    {
+                                        'component': 'VTextField', 
                                         'props': {
-                                            'model': 'updatecron',
-                                            'label': '更新通知周期',
-                                            'placeholder': '15 8-23/2 * * *',
-                                            'hint': 'Cron表达式，如：每天8点到23点每2小时第15分钟检查'
+                                            'model': 'host', 
+                                            'label': '服务器地址',
+                                            'placeholder': 'http://127.0.0.1:端口',
+                                            'hint': 'dockerCopilot服务地址 http(s)://ip:端口'
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VCol', 
+                                'props': {'cols': 12, 'md': 6}, 
+                                'content': [
+                                    {
+                                        'component': 'VTextField', 
+                                        'props': {
+                                            'model': 'secretKey', 
+                                            'label': 'secretKey',
+                                            'type': 'password',
+                                            'hint': 'dockerCopilot秘钥 环境变量查看'
                                         }
                                     }
                                 ]
                             }
                         ]
                     },
-                        {
-                            "component": "VRow",
-                            "content": [
-                                {
-                                    'component': 'VCol',
-                                    'props': {
-                                        'cols': 12
-                                    },
-                                    'content': [
-                                        {
-                                            'component': 'VSelect',
-                                            'props': {
-                                                'chips': True,
-                                                'multiple': True,
-                                                'model': 'updatablelist',
-                                                'label': '更新通知容器',
-                                                'items': updatable_list,
-                                                'hint': '选择容器在有更新时发送通知'
-                                            }
-                                        }
-                                    ]
-                                }
-                            ],
-                        },
-                        {
-                            "component": "VRow",
-                            "content": [
-                                {
-                                    'component': 'VCol',
-                                    'props': {
-                                        'cols': 12,
-                                        'md': 6
-                                    },
-                                    'content': [
-                                        {
-                                            'component': 'VSwitch',
-                                            'props': {
-                                                'model': 'updatablenotify',
-                                                'label': '发送通知',
-                                                'hint': '开启后，当检测到更新时发送通知'
-                                            }
-                                        }
-                                    ]
-                                }
-                            ]
-                        }]
-                },
                     {
-                        'component': 'VWindowItem',
-                        'props': {'value': 'C2', 'style': {'margin-top': '30px'}},
+                        'component': 'VTabs',
+                        'props': {
+                            'model': '_tabs',
+                            'height': 40,
+                            'style': {
+                                'margin-top': '20px',
+                                'margin-bottom': '20px'
+                            }
+                        },
                         'content': [
                             {
-                                'component': 'VRow',
-                                'content': [
-                                    {
-                                        'component': 'VCol',
-                                        'props': {
-                                            'cols': 12,
-                                            'md': 6
-                                        },
-                                        'content': [
-                                            {
-                                                'component': 'VTextField',
-                                                'props': {
-                                                    'model': 'autoupdatecron',
-                                                    'label': '自动更新周期',
-                                                    'placeholder': '15 2 * * *',
-                                                    'hint': 'Cron表达式，如：每天凌晨2点15分自动更新'
-                                                }
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        'component': 'VCol',
-                                        'props': {
-                                            'cols': 12,
-                                            'md': 3
-                                        },
-                                        'content': [
-                                            {
-                                                'component': 'VTextField',
-                                                'props': {
-                                                    'model': 'interval',
-                                                    'label': '跟踪间隔(秒)',
-                                                    'placeholder': '10',
-                                                    'type': 'number',
-                                                    'hint': '开启进度汇报时,每多少秒检查一次进度状态，默认10秒'
-                                                }
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        'component': 'VCol',
-                                        'props': {
-                                            'cols': 12,
-                                            'md': 3
-                                        },
-                                        'content': [
-                                            {
-                                                'component': 'VTextField',
-                                                'props': {
-                                                    'model': 'intervallimit',
-                                                    'label': '检查次数',
-                                                    'placeholder': '6',
-                                                    'type': 'number',
-                                                    'hint': '开启进度汇报，当达限制检查次数后放弃追踪,默认6次'
-                                                }
-                                            }
-                                        ]
-                                    }
-                                ]},
+                                'component': 'VTab',
+                                'props': {'value': 'C1'},
+                                'text': '更新通知'
+                            },
                             {
-                                'component': 'VRow',
-                                'content': [
-                                    {
-                                        'component': 'VCol',
-                                        'props': {
-                                            'cols': 12,
-                                            'md': 4
-                                        },
-                                        'content': [
-                                            {
-                                                'component': 'VSwitch',
-                                                'props': {
-                                                    'model': 'autoupdatenotify',
-                                                    'label': '自动更新通知',
-                                                    'hint': '更新任务创建成功发送通知'
-                                                }
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        'component': 'VCol',
-                                        'props': {
-                                            'cols': 12,
-                                            'md': 4
-                                        },
-                                        'content': [
-                                            {
-                                                'component': 'VSwitch',
-                                                'props': {
-                                                    'model': 'schedulereport',
-                                                    'label': '进度汇报',
-                                                    'hint': '追踪更新任务进度并发送通知'
-                                                }
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        'component': 'VCol',
-                                        'props': {
-                                            'cols': 12,
-                                            'md': 4
-                                        },
-                                        'content': [
-                                            {
-                                                'component': 'VSwitch',
-                                                'props': {
-                                                    'model': 'deleteimages',
-                                                    'label': '清理镜像',
-                                                    'hint': '在下次执行时清理无tag且不在使用中的全部镜像'
-                                                }
-                                            }
-                                        ]
-                                    },
-                                ]},
+                                'component': 'VTab',
+                                'props': {'value': 'C2'},
+                                'text': '自动更新'
+                            },
                             {
-                                "component": "VRow",
-                                "content": [
-                                    {
-                                        'component': 'VCol',
-                                        'props': {
-                                            'cols': 12
-                                        },
-                                        'content': [
-                                            {
-                                                'component': 'VSelect',
-                                                'props': {
-                                                    'chips': False,
-                                                    'multiple': True,
-                                                    'model': 'autoupdatelist',
-                                                    'label': '自动更新容器',
-                                                    'items': auto_update_list,
-                                                    'hint': '被选则的容器当有新版本时自动更新'
-                                                }
-                                            }
-                                        ]
-                                    }
-                                ],
-                            }, ]
+                                'component': 'VTab',
+                                'props': {'value': 'C3'},
+                                'text': '自动备份'
+                            }
+                        ]
                     },
                     {
-                        'component': 'VWindowItem',
-                        'props': {
-                            'value': 'C3',
-                            'style': {'margin-top': '30px'}
-                        },
-                        'content': [{
-                            "component": "VRow",
-                            "content": [
-                                {
-                                    'component': 'VCol',
-                                    'props': {
-                                        'cols': 12,
-                                        'md': 6
-                                    },
-                                    'content': [
-                                        {
-                                            'component': 'VTextField',
-                                            'props': {
-                                                'model': 'backupcron',
-                                                'label': '自动备份周期',
-                                                'placeholder': '0 7 * * *',
-                                                'hint': 'Cron表达式，如：每天7点整自动备份'
+                        'component': 'VWindow',
+                        'props': {'model': '_tabs'},
+                        'content': [
+                            {
+                                'component': 'VWindowItem',
+                                'props': {'value': 'C1'},
+                                'content': [
+                                    {
+                                        'component': 'VRow', 
+                                        'content': [
+                                            {
+                                                'component': 'VCol', 
+                                                'props': {'cols': 12, 'md': 6}, 
+                                                'content': [
+                                                    {
+                                                        'component': 'VTextField', 
+                                                        'props': {
+                                                            'model': 'updatecron', 
+                                                            'label': '更新通知周期',
+                                                            'placeholder': '15 8-23/2 * * *',
+                                                            'hint': 'Cron表达式，如：每天8点到23点每2小时第15分钟检查'
+                                                        }
+                                                    }
+                                                ]
                                             }
-                                        }
-                                    ]
-                                },
-                                {
-                                    'component': 'VCol',
-                                    'props': {
-                                        'cols': 12,
-                                        'md': 6
+                                        ]
                                     },
-                                    'content': [
-                                        {
-                                            'component': 'VSwitch',
-                                            'props': {
-                                                'model': 'backupsnotify',
-                                                'label': '备份通知',
-                                                'hint': '备份成功发送通知'
+                                    {
+                                        'component': 'VRow', 
+                                        'content': [
+                                            {
+                                                'component': 'VCol', 
+                                                'props': {'cols': 12}, 
+                                                'content': [
+                                                    {
+                                                        'component': 'VSelect', 
+                                                        'props': {
+                                                            'multiple': True, 
+                                                            'chips': True, 
+                                                            'clearable': True,
+                                                            'model': 'updatablelist', 
+                                                            'label': '更新通知容器',
+                                                            'items': updatable_list,
+                                                            'hint': '选择容器在有更新时发送通知'
+                                                        }
+                                                    }
+                                                ]
                                             }
-                                        }
-                                    ]
-                                }
-                            ]}]
-                    }]
+                                        ]
+                                    },
+                                    {
+                                        'component': 'VRow', 
+                                        'content': [
+                                            {
+                                                'component': 'VCol', 
+                                                'props': {'cols': 12, 'md': 6}, 
+                                                'content': [
+                                                    {
+                                                        'component': 'VSwitch', 
+                                                        'props': {
+                                                            'model': 'updatablenotify', 
+                                                            'label': '更新通知开关',
+                                                            'hint': '开启后，当检测到更新时发送通知'
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VWindowItem',
+                                'props': {'value': 'C2'},
+                                'content': [
+                                    {
+                                        'component': 'VRow', 
+                                        'content': [
+                                            {
+                                                'component': 'VCol', 
+                                                'props': {'cols': 12, 'md': 6}, 
+                                                'content': [
+                                                    {
+                                                        'component': 'VTextField', 
+                                                        'props': {
+                                                            'model': 'autoupdatecron', 
+                                                            'label': '自动更新周期',
+                                                            'placeholder': '15 2 * * *',
+                                                            'hint': 'Cron表达式，如：每天凌晨2点15分自动更新'
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                'component': 'VCol', 
+                                                'props': {'cols': 12, 'md': 3}, 
+                                                'content': [
+                                                    {
+                                                        'component': 'VTextField', 
+                                                        'props': {
+                                                            'model': 'interval', 
+                                                            'label': '跟踪间隔(秒)',
+                                                            'placeholder': '10',
+                                                            'type': 'number',
+                                                            'hint': '开启进度汇报时，每多少秒检查一次进度状态'
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                'component': 'VCol', 
+                                                'props': {'cols': 12, 'md': 3}, 
+                                                'content': [
+                                                    {
+                                                        'component': 'VTextField', 
+                                                        'props': {
+                                                            'model': 'intervallimit', 
+                                                            'label': '检查次数',
+                                                            'placeholder': '6',
+                                                            'type': 'number',
+                                                            'hint': '开启进度汇报，当达到限制检查次数后放弃追踪'
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        'component': 'VRow', 
+                                        'content': [
+                                            {
+                                                'component': 'VCol', 
+                                                'props': {'cols': 12, 'md': 4}, 
+                                                'content': [
+                                                    {
+                                                        'component': 'VSwitch', 
+                                                        'props': {
+                                                            'model': 'autoupdatenotify', 
+                                                            'label': '自动更新通知',
+                                                            'hint': '更新任务创建成功发送通知'
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                'component': 'VCol', 
+                                                'props': {'cols': 12, 'md': 4}, 
+                                                'content': [
+                                                    {
+                                                        'component': 'VSwitch', 
+                                                        'props': {
+                                                            'model': 'schedulereport', 
+                                                            'label': '进度汇报',
+                                                            'hint': '追踪更新任务进度并发送通知'
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                'component': 'VCol', 
+                                                'props': {'cols': 12, 'md': 4}, 
+                                                'content': [
+                                                    {
+                                                        'component': 'VSwitch', 
+                                                        'props': {
+                                                            'model': 'deleteimages', 
+                                                            'label': '清理镜像',
+                                                            'hint': '在下次执行时清理无tag且不在使用中的全部镜像'
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        'component': 'VRow', 
+                                        'content': [
+                                            {
+                                                'component': 'VCol', 
+                                                'props': {'cols': 12}, 
+                                                'content': [
+                                                    {
+                                                        'component': 'VSelect', 
+                                                        'props': {
+                                                            'multiple': True, 
+                                                            'chips': True, 
+                                                            'clearable': True,
+                                                            'model': 'autoupdatelist', 
+                                                            'label': '自动更新容器',
+                                                            'items': auto_update_list,
+                                                            'hint': '被选中的容器当有新版本时自动更新'
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VWindowItem',
+                                'props': {'value': 'C3'},
+                                'content': [
+                                    {
+                                        'component': 'VRow', 
+                                        'content': [
+                                            {
+                                                'component': 'VCol', 
+                                                'props': {'cols': 12, 'md': 6}, 
+                                                'content': [
+                                                    {
+                                                        'component': 'VTextField', 
+                                                        'props': {
+                                                            'model': 'backupcron', 
+                                                            'label': '自动备份周期',
+                                                            'placeholder': '0 7 * * *',
+                                                            'hint': 'Cron表达式，如：每天7点整自动备份'
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                'component': 'VCol', 
+                                                'props': {'cols': 12, 'md': 6}, 
+                                                'content': [
+                                                    {
+                                                        'component': 'VSwitch', 
+                                                        'props': {
+                                                            'model': 'backupsnotify', 
+                                                            'label': '备份通知',
+                                                            'hint': '备份成功发送通知'
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
             }
-        ]
-        
-        # 默认配置值
-        default_config = {
+        ], {
             "enabled": self.config.enabled,
             "onlyonce": self.config.onlyonce,
             "host": self.config.host,
             "secretKey": self.config.secretKey,
-            "updatecron": self.config.update_cron,
-            "updatablelist": self.config.updatable_list,
-            "updatablenotify": self.config.updatable_notify,
-            "autoupdatecron": self.config.auto_update_cron,
-            "autoupdatelist": self.config.auto_update_list,
-            "autoupdatenotify": self.config.auto_update_notify,
-            "schedulereport": self.config.schedule_report,
-            "deleteimages": self.config.delete_images,
-            "backupcron": self.config.backup_cron,
-            "backupsnotify": self.config.backups_notify,
+            "updatecron": self.config.updatecron,
+            "updatablelist": self.config.updatablelist,
+            "updatablenotify": self.config.updatablenotify,
+            "autoupdatecron": self.config.autoupdatecron,
+            "autoupdatelist": self.config.autoupdatelist,
+            "autoupdatenotify": self.config.autoupdatenotify,
+            "schedulereport": self.config.schedulereport,
+            "deleteimages": self.config.deleteimages,
+            "backupcron": self.config.backupcron,
+            "backupsnotify": self.config.backupsnotify,
             "interval": self.config.interval,
             "intervallimit": self.config.intervallimit,
             "_tabs": "C1"  # 默认选中的标签页
         }
-        
-        # V2版本需要返回两个值：表单配置和默认值
-        return [
-            {
-                "component": "VForm",
-                "content": form_items
-            }
-        ], default_config
 
     def get_page(self) -> List[dict]:
-        """获取页面配置 - 提供详情页面"""
+        """获取页面配置"""
+        # 显示简单的状态页面
+        jobs_count = len(self._scheduler.get_jobs()) if self._scheduler else 0
+        
         return [
             {
                 "component": "VCard",
@@ -1051,7 +947,7 @@ class DockerCopilotHelper(_PluginBase):
                         "content": [
                             {
                                 "component": "VCol",
-                                "props": {"cols": 12, "md": 6},
+                                "props": {"cols": 12, "md": 4},
                                 "content": [
                                     {
                                         "component": "VCardText",
@@ -1063,7 +959,7 @@ class DockerCopilotHelper(_PluginBase):
                             },
                             {
                                 "component": "VCol",
-                                "props": {"cols": 12, "md": 6},
+                                "props": {"cols": 12, "md": 4},
                                 "content": [
                                     {
                                         "component": "VCardText",
@@ -1072,23 +968,6 @@ class DockerCopilotHelper(_PluginBase):
                                         }
                                     }
                                 ]
-                            }
-                        ]
-                    },
-                    {
-                        "component": "VRow",
-                        "content": [
-                            {
-                                "component": "VCol",
-                                "props": {"cols": 12, "md": 4},
-                                "content": [
-                                    {
-                                        "component": "VCardText",
-                                        "props": {
-                                            "text": f"定时任务: {len(self._scheduler.get_jobs()) if self._scheduler else 0} 个"
-                                        }
-                                    }
-                                ]
                             },
                             {
                                 "component": "VCol",
@@ -1097,19 +976,7 @@ class DockerCopilotHelper(_PluginBase):
                                     {
                                         "component": "VCardText",
                                         "props": {
-                                            "text": f"监控容器: {len(self.config.updatable_list)} 个"
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                "component": "VCol",
-                                "props": {"cols": 12, "md": 4},
-                                "content": [
-                                    {
-                                        "component": "VCardText",
-                                        "props": {
-                                            "text": f"自动更新: {len(self.config.auto_update_list)} 个"
+                                            "text": f"定时任务: {jobs_count} 个"
                                         }
                                     }
                                 ]
@@ -1121,66 +988,7 @@ class DockerCopilotHelper(_PluginBase):
             {
                 "component": "VCard",
                 "props": {
-                    "title": "操作",
-                    "style": {"margin-bottom": "20px"}
-                },
-                "content": [
-                    {
-                        "component": "VRow",
-                        "content": [
-                            {
-                                "component": "VCol",
-                                "props": {"cols": 12, "md": 4},
-                                "content": [
-                                    {
-                                        "component": "VBtn",
-                                        "props": {
-                                            "block": True,
-                                            "color": "primary",
-                                            "onClick": "checkUpdates"
-                                        },
-                                        "text": "立即检查更新"
-                                    }
-                                ]
-                            },
-                            {
-                                "component": "VCol",
-                                "props": {"cols": 12, "md": 4},
-                                "content": [
-                                    {
-                                        "component": "VBtn",
-                                        "props": {
-                                            "block": True,
-                                            "color": "success",
-                                            "onClick": "runBackup"
-                                        },
-                                        "text": "立即备份"
-                                    }
-                                ]
-                            },
-                            {
-                                "component": "VCol",
-                                "props": {"cols": 12, "md": 4},
-                                "content": [
-                                    {
-                                        "component": "VBtn",
-                                        "props": {
-                                            "block": True,
-                                            "color": "warning",
-                                            "onClick": "runAutoUpdate"
-                                        },
-                                        "text": "立即自动更新"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                "component": "VCard",
-                "props": {
-                    "title": "帮助",
+                    "title": "功能介绍",
                     "style": {"margin-bottom": "20px"}
                 },
                 "content": [
@@ -1202,7 +1010,6 @@ class DockerCopilotHelper(_PluginBase):
                                         <li>1. 填写正确的DockerCopilot服务器地址和密钥</li>
                                         <li>2. 在相应标签页配置定时任务和容器选择</li>
                                         <li>3. 启用插件并保存配置</li>
-                                        <li>4. 可以在详情页手动执行各项操作</li>
                                     </ul>
                                     """
                                 }
@@ -1228,79 +1035,8 @@ class DockerCopilotHelper(_PluginBase):
     @staticmethod
     def get_command() -> List[Dict[str, Any]]:
         """获取命令"""
-        return [
-            {
-                "cmd": "/dc_check",
-                "event": EventType.PluginAction,
-                "desc": "检查容器更新",
-                "data": {
-                    "action": "check_updates"
-                }
-            },
-            {
-                "cmd": "/dc_backup",
-                "event": EventType.PluginAction,
-                "desc": "备份容器",
-                "data": {
-                    "action": "backup"
-                }
-            },
-            {
-                "cmd": "/dc_update",
-                "event": EventType.PluginAction,
-                "desc": "执行自动更新",
-                "data": {
-                    "action": "auto_update"
-                }
-            }
-        ]
+        return []
 
     def get_api(self) -> List[Dict[str, Any]]:
         """获取API"""
-        return [
-            {
-                "path": "/check_updates",
-                "endpoint": self.check_updates_api,
-                "methods": ["GET"],
-                "summary": "检查容器更新",
-                "description": "手动触发检查容器更新"
-            },
-            {
-                "path": "/backup",
-                "endpoint": self.backup_api,
-                "methods": ["GET"],
-                "summary": "备份容器",
-                "description": "手动触发备份容器"
-            },
-            {
-                "path": "/auto_update",
-                "endpoint": self.auto_update_api,
-                "methods": ["GET"],
-                "summary": "执行自动更新",
-                "description": "手动触发自动更新"
-            }
-        ]
-
-    def check_updates_api(self):
-        """API: 检查更新"""
-        try:
-            self._check_updates()
-            return {"code": 0, "message": "检查更新任务已触发"}
-        except Exception as e:
-            return {"code": 1, "message": f"检查更新失败: {str(e)}"}
-
-    def backup_api(self):
-        """API: 备份容器"""
-        try:
-            self._backup_containers()
-            return {"code": 0, "message": "备份任务已触发"}
-        except Exception as e:
-            return {"code": 1, "message": f"备份失败: {str(e)}"}
-
-    def auto_update_api(self):
-        """API: 自动更新"""
-        try:
-            self._auto_update()
-            return {"code": 0, "message": "自动更新任务已触发"}
-        except Exception as e:
-            return {"code": 1, "message": f"自动更新失败: {str(e)}"}
+        return []
