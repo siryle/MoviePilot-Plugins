@@ -45,13 +45,13 @@ class MediaCoverGenerator(_PluginBase):
     # 插件描述
     plugin_desc = "自动生成媒体库封面，支持 Emby，Jellyfin"
     # 插件图标
-    plugin_icon = "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/icons/emby.png"
+    plugin_icon = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/icons/emby.png"
     # 插件版本
-    plugin_version = "0.9.1"  # 更新版本号
+    plugin_version = "0.9.2"  # 更新版本号
     # 插件作者
     plugin_author = "justzerock"
     # 作者主页
-    author_url = "https://github.com/justzerock/MoviePilot-Plugins"
+    author_url = "https://github.com/justzerock"
     # 插件配置项ID前缀
     plugin_config_prefix = "mediacovergenerator_"
     # 加载顺序
@@ -114,11 +114,12 @@ class MediaCoverGenerator(_PluginBase):
     _badge_font_url = ''
     _badge_font_path = ''
     _badge_font_path_local = ''
-    _badge_font_size = 1
+    _badge_font_size = 2
     _badge_position = 'top-left'
     _badge_color = '#52B54B'
     _badge_text_color = '#FFFFFF'  # 新增：角标文字颜色
-    _badge_padding = 50
+    _badge_text_bold = False  # 新增：角标文字加粗
+    _badge_padding = 30
 
     def __init__(self):
         super().__init__()
@@ -175,11 +176,12 @@ class MediaCoverGenerator(_PluginBase):
             self._badge_font_url = config.get("badge_font_url")
             self._badge_font_path = config.get("badge_font_path")
             self._badge_font_path_local = config.get("badge_font_path_local")
-            self._badge_font_size = config.get("badge_font_size") or 1
+            self._badge_font_size = config.get("badge_font_size") or 2
             self._badge_position = config.get("badge_position") or 'top-left'
             self._badge_color = config.get("badge_color") or '#52B54B'
             self._badge_text_color = config.get("badge_text_color") or '#FFFFFF'  # 新增
-            self._badge_padding = config.get("badge_padding") or 50
+            self._badge_text_bold = config.get("badge_text_bold") or False  # 新增：角标文字加粗
+            self._badge_padding = config.get("badge_padding") or 30
 
         if self._selected_servers:
             self._servers = self.mediaserver_helper.get_services(
@@ -267,6 +269,7 @@ class MediaCoverGenerator(_PluginBase):
             "badge_position": self._badge_position,
             "badge_color": self._badge_color,
             "badge_text_color": self._badge_text_color,  # 新增
+            "badge_text_bold": self._badge_text_bold,  # 新增：角标文字加粗
             "badge_padding": self._badge_padding
         })
 
@@ -1039,8 +1042,8 @@ class MediaCoverGenerator(_PluginBase):
                                     'model': 'badge_font_size',
                                     'label': '角标字体大小比例',
                                     'prependInnerIcon': 'mdi-format-size',
-                                    'placeholder': '1',
-                                    'hint': '角标字体大小比例，1为默认大小',
+                                    'placeholder': '2',
+                                    'hint': '角标字体大小比例，2为默认大小',
                                     'persistentHint': True
                                 }
                             }
@@ -1123,12 +1126,35 @@ class MediaCoverGenerator(_PluginBase):
                         },
                         'content': [
                             {
+                                'component': 'VSwitch',
+                                'props': {
+                                    'model': 'badge_text_bold',
+                                    'label': '角标文字加粗',
+                                    'hint': '启用后角标文字将显示为粗体',
+                                    "persistent-hint": True,
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                'component': 'VRow',
+                'content': [
+                    {
+                        'component': 'VCol',
+                        'props': {
+                            'cols': 12,
+                            'md': 3
+                        },
+                        'content': [
+                            {
                                 'component': 'VTextField',
                                 'props': {
                                     'model': 'badge_padding',
                                     'label': '角标内边距',
                                     'prependInnerIcon': 'mdi-arrow-expand',
-                                    'placeholder': '50',
+                                    'placeholder': '30',
                                     'hint': '角标数字与边框的距离（像素）',
                                     'persistentHint': True
                                 }
@@ -1537,11 +1563,12 @@ class MediaCoverGenerator(_PluginBase):
             "badge_font_url": "",
             "badge_font_path": "",
             "badge_font_path_local": "",
-            "badge_font_size": 1,
+            "badge_font_size": 2,
             "badge_position": "top-left",
             "badge_color": "#52B54B",
             "badge_text_color": "#FFFFFF",  # 新增：角标文字颜色
-            "badge_padding": 50
+            "badge_text_bold": False,  # 新增：角标文字加粗默认关闭
+            "badge_padding": 30
         }
 
     def get_page(self) -> List[dict]:
@@ -1747,6 +1774,7 @@ class MediaCoverGenerator(_PluginBase):
                 'badge_position': self._badge_position,
                 'badge_color': self._badge_color,
                 'badge_text_color': badge_text_color,  # 新增：计算出的文字颜色
+                'badge_text_bold': self._badge_text_bold,  # 新增：文字加粗参数
                 'badge_padding': badge_padding  # 确保是整数
             }
 
@@ -1851,39 +1879,17 @@ class MediaCoverGenerator(_PluginBase):
             else:
                 library_id = library.get("ItemId")
             
-            # 尝试不同的API端点获取媒体数量
+            # 尝试API端点获取媒体数量
             
-            # 方法1: 使用 Items/Counts API
-            try:
-                url = f'[HOST]emby/Items/Counts?api_key=[APIKEY]'
-                res = service.instance.get_data(url=url)
-                
-                if res and res.status_code == 200:
-                    data = res.json()
-                    # 查找对应媒体库的数量
-                    for item in data.get('Items', []):
-                        # Emby返回的数据结构：ItemId对应库ID
-                        if str(item.get('ItemId')) == str(library_id):
-                            count = item.get('TotalRecordCount', 0)
-                            if count > 0:
-                                logger.info(f"通过Items/Counts API获取到媒体库 {library_name} 的数量: {count}")
-                                return count
-            except Exception as e:
-                logger.warning(f"方法1获取媒体数量失败: {str(e)}")
-            
-            # 方法2: 直接查询库中的项目数量
+            # 直接查询库中的项目数量
             try:
                 # 构建查询URL
                 if service.type == 'emby':
                     url = f'[HOST]emby/Items/?api_key=[APIKEY]' \
-                        f'&ParentId={library_id}&Recursive=True' \
-                        f'&IncludeItemTypes=Movie,Series,MusicAlbum,MusicArtist,Audio' \
-                        f'&Limit=1'
+                        f'&ParentId={library_id}'
                 else:
                     url = f'[HOST]Items/?api_key=[APIKEY]' \
-                        f'&ParentId={library_id}&Recursive=True' \
-                        f'&IncludeItemTypes=Movie,Series,MusicAlbum,MusicArtist,Audio' \
-                        f'&Limit=1'
+                        f'&ParentId={library_id}'
                 
                 res = service.instance.get_data(url=url)
                 
@@ -1900,68 +1906,9 @@ class MediaCoverGenerator(_PluginBase):
                         logger.info(f"通过直接查询获取到媒体库 {library_name} 的数量: {total_record_count}")
                         return total_record_count
             except Exception as e:
-                logger.warning(f"方法2获取媒体数量失败: {str(e)}")
+                logger.warning(f"获取媒体数量失败: {str(e)}")
             
-            # 方法3: 使用 Library/MediaFolders API
-            try:
-                if service.type == 'emby':
-                    url = f'[HOST]emby/Library/MediaFolders?api_key=[APIKEY]'
-                else:
-                    url = f'[HOST]Library/MediaFolders?api_key=[APIKEY]'
-                
-                res = service.instance.get_data(url=url)
-                
-                if res and res.status_code == 200:
-                    data = res.json()
-                    # 查找对应媒体库的数量
-                    if service.type == 'emby':
-                        items = data.get('Items', [])
-                        for item in items:
-                            if str(item.get('Id')) == str(library_id):
-                                count = item.get('TotalRecordCount', 0)
-                                if count > 0:
-                                    logger.info(f"通过Library/MediaFolders API获取到媒体库 {library_name} 的数量: {count}")
-                                    return count
-                    else:
-                        # Jellyfin的返回结构可能不同
-                        for item in data:
-                            if str(item.get('Id')) == str(library_id):
-                                count = item.get('TotalRecordCount', 0)
-                                if count > 0:
-                                    logger.info(f"通过Library/MediaFolders API获取到媒体库 {library_name} 的数量: {count}")
-                                    return count
-            except Exception as e:
-                logger.warning(f"方法3获取媒体数量失败: {str(e)}")
-            
-            # 方法4: 尝试获取库中所有类型的项目数量
-            try:
-                # 定义要查询的项目类型
-                item_types = ['Movie', 'Series', 'Season', 'Episode', 'MusicAlbum', 'MusicArtist', 'Audio', 'BoxSet']
-                total_count = 0
-                
-                for item_type in item_types:
-                    if service.type == 'emby':
-                        url = f'[HOST]emby/Items/?api_key=[APIKEY]' \
-                            f'&ParentId={library_id}&Recursive=True' \
-                            f'&IncludeItemTypes={item_type}&Limit=0'
-                    else:
-                        url = f'[HOST]Items/?api_key=[APIKEY]' \
-                            f'&ParentId={library_id}&Recursive=True' \
-                            f'&IncludeItemTypes={item_type}&Limit=0'
-                    
-                    res = service.instance.get_data(url=url)
-                    if res and res.status_code == 200:
-                        data = res.json()
-                        count = data.get('TotalRecordCount', 0)
-                        total_count += count
-                
-                if total_count > 0:
-                    logger.info(f"通过分类型统计获取到媒体库 {library_name} 的数量: {total_count}")
-                    return total_count
-            except Exception as e:
-                logger.warning(f"方法4获取媒体数量失败: {str(e)}")
-            
-            logger.warning(f"所有方法都无法获取媒体库 {library_name} 的媒体数量")
+            logger.warning(f"无法获取媒体库 {library_name} 的媒体数量")
             return 0
             
         except Exception as err:
