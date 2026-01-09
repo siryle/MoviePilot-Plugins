@@ -1819,7 +1819,7 @@ class MediaCoverGenerator(_PluginBase):
         except Exception as e:
             logger.warning(f"计算对比色失败，使用默认颜色: {str(e)}")
             return '#FFFFFF'  # 失败时使用白色
-    
+
     def __get_media_count(self, server_name, library_name):
         """
         获取指定媒体库的媒体总数
@@ -1844,7 +1844,16 @@ class MediaCoverGenerator(_PluginBase):
             if not library:
                 logger.warning(f"找不到媒体库: {library_name}")
                 return None
-                
+            
+            # 首先尝试从库信息中直接获取数量（Emby/Jellyfin提供）
+            # 音乐库通常有SongCount字段
+            if library.get('CollectionType') == 'music':
+                # 尝试从库信息获取SongCount
+                song_count = library.get('SongCount')
+                if song_count is not None:
+                    logger.info(f"音乐库 {library_name} 的歌曲数量（从库信息）: {song_count}")
+                    return song_count
+            
             # 获取媒体库ID
             if service.type == 'emby':
                 library_id = library.get("Id")
@@ -1853,19 +1862,35 @@ class MediaCoverGenerator(_PluginBase):
             
             # 尝试获取媒体数量
             
-            # 直接查询库中的项目数量
+            # 方法1：直接查询库中的项目数量
             try:
-                # 构建查询URL
-                if service.type == 'emby':
-                    url = f'[HOST]emby/Items/?api_key=[APIKEY]' \
-                        f'&ParentId={library_id}&Recursive=True' \
-                        f'&IncludeItemTypes=Movie,Series,MusicAlbum,MusicArtist,Audio' \
-                        f'&Limit=1'
+                # 根据库类型设置查询参数
+                collection_type = library.get('CollectionType')
+                
+                if collection_type == 'music':
+                    # 音乐库 - 查询歌曲数量
+                    if service.type == 'emby':
+                        url = f'[HOST]emby/Items/?api_key=[APIKEY]' \
+                            f'&ParentId={library_id}&Recursive=True' \
+                            f'&IncludeItemTypes=Audio' \
+                            f'&Limit=1'
+                    else:
+                        url = f'[HOST]Items/?api_key=[APIKEY]' \
+                            f'&ParentId={library_id}&Recursive=True' \
+                            f'&IncludeItemTypes=Audio' \
+                            f'&Limit=1'
                 else:
-                    url = f'[HOST]Items/?api_key=[APIKEY]' \
-                        f'&ParentId={library_id}&Recursive=True' \
-                        f'&IncludeItemTypes=Movie,Series,MusicAlbum,MusicArtist,Audio' \
-                        f'&Limit=1'
+                    # 其他类型库
+                    if service.type == 'emby':
+                        url = f'[HOST]emby/Items/?api_key=[APIKEY]' \
+                            f'&ParentId={library_id}&Recursive=True' \
+                            f'&IncludeItemTypes=Movie,Series,MusicAlbum,MusicArtist,Audio' \
+                            f'&Limit=1'
+                    else:
+                        url = f'[HOST]Items/?api_key=[APIKEY]' \
+                            f'&ParentId={library_id}&Recursive=True' \
+                            f'&IncludeItemTypes=Movie,Series,MusicAlbum,MusicArtist,Audio' \
+                            f'&Limit=1'
                 
                 res = service.instance.get_data(url=url)
                 
@@ -1879,17 +1904,36 @@ class MediaCoverGenerator(_PluginBase):
                         total_record_count = data.get('TotalRecordCount', 0)
                     
                     if total_record_count > 0:
-                        logger.info(f"通过直接查询获取到媒体库 {library_name} 的数量: {total_record_count}")
+                        logger.info(f"通过查询获取到媒体库 {library_name} 的数量: {total_record_count}")
                         return total_record_count
             except Exception as e:
                 logger.warning(f"获取媒体数量失败: {str(e)}")
+            
+            # 方法2：对于Emby，可以尝试获取库的详细信息
+            try:
+                if service.type == 'emby':
+                    url = f'[HOST]emby/Items/{library_id}?api_key=[APIKEY]'
+                    res = service.instance.get_data(url=url)
+                    
+                    if res and res.status_code == 200:
+                        data = res.json()
+                        # 尝试获取各种可能的数量字段
+                        count_fields = ['SongCount', 'ChildCount', 'RecursiveItemCount']
+                        for field in count_fields:
+                            if field in data:
+                                count = data[field]
+                                logger.info(f"从库详情中获取到 {library_name} 的 {field}: {count}")
+                                return count
+            except Exception as e:
+                logger.warning(f"获取库详情失败: {str(e)}")
             
             logger.warning(f"无法获取媒体库 {library_name} 的媒体数量")
             return 0
             
         except Exception as err:
             logger.error(f"获取媒体数量失败: {str(err)}")
-            return None    
+            return None
+        
     def __generate_from_server(self, service, library, title):
 
         logger.info(f"媒体库 {service.name}：{library['Name']} 开始筛选媒体项")
@@ -2243,10 +2287,14 @@ class MediaCoverGenerator(_PluginBase):
                 res = service.instance.get_data(url=url)
                 if res:
                     data = res.json()
-                    if service.type == 'emby':
-                        return data.get("Items", [])
-                    else:
-                        return data
+                    libraries = data.get("Items", []) if service.type == 'emby' else data
+                    
+                    # 调试：记录库信息（可选）
+                    for lib in libraries:
+                        logger.debug(f"媒体库信息 - 名称: {lib.get('Name')}, 类型: {lib.get('CollectionType')}, "
+                                    f"SongCount: {lib.get('SongCount')}, ChildCount: {lib.get('ChildCount')}")
+                    
+                    return libraries
             except Exception as err:
                 logger.error(f"获取媒体库列表失败：{str(err)}")
             return []
