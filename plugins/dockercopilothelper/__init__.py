@@ -19,13 +19,13 @@ from app.utils.http import RequestUtils
 
 class DockerCopilotHelper(_PluginBase):
     # 插件名称
-    plugin_name = "DC助手AI版"
+    plugin_name = "DC助手"
     # 插件描述
     plugin_desc = "配合DockerCopilot,完成更新通知、自动更改、自动备份功能"
     # 插件图标
-    plugin_icon = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/icons/Docker_Copilot.png"
+    plugin_icon = "https://raw.githubusercontent.com/gxterry/MoviePilot-Plugins/main/icons/Docker_Copilot.png"
     # 插件版本
-    plugin_version = "1.2.0"
+    plugin_version = "1.1.2"
     # 插件作者
     plugin_author = "gxterry"
     # 作者主页
@@ -59,91 +59,91 @@ class DockerCopilotHelper(_PluginBase):
     _secretKey = None
     _scheduler: Optional[BackgroundScheduler] = None
 
-    def init_plugin(self, config: dict = None):
-        # 停止现有任务
-        self.stop_service()
-        if config:
-            self._enabled = config.get("enabled")
-            self._onlyonce = config.get("onlyonce")
-            self._update_cron = config.get("updatecron")
-            self._updatable_list = config.get("updatablelist")
-            self._updatable_notify = config.get("updatablenotify")
-            self._auto_update_cron = config.get("autoupdatecron")
-            self._auto_update_list = config.get("autoupdatelist")
-            self._auto_update_notify = config.get("autoupdatenotify")
-            self._schedule_report = config.get("schedulereport")
-            self._delete_images = config.get("deleteimages")
-            self._backup_cron = config.get("backupcron")
-            self._backups_notify = config.get("backupsnotify")
-            self._intervallimit = config.get("intervallimit") or 6
-            self._interval = config.get("interval") or 10
+	def init_plugin(self, config: dict = None):
+	    # 停止现有任务
+	    self.stop_service()
+	    if config:
+	        self._enabled = config.get("enabled")
+	        self._onlyonce = config.get("onlyonce")
+	        self._update_cron = config.get("updatecron")
+	        self._updatable_list = config.get("updatablelist")
+	        self._updatable_notify = config.get("updatablenotify")
+	        self._auto_update_cron = config.get("autoupdatecron")
+	        self._auto_update_list = config.get("autoupdatelist")
+	        self._auto_update_notify = config.get("autoupdatenotify")
+	        self._schedule_report = config.get("schedulereport")
+	        self._delete_images = config.get("deleteimages")
+	        self._backup_cron = config.get("backupcron")
+	        self._backups_notify = config.get("backupsnotify")
+	        self._intervallimit = config.get("intervallimit") or 6
+	        self._interval = config.get("interval") or 10
 
-            self._host = config.get("host")
-            self._secretKey = config.get("secretKey")
+	        self._host = config.get("host")
+	        self._secretKey = config.get("secretKey")
 
-            # 获取DC列表数据
-            if not self._secretKey or not self._host:
-                logger.error(f"DC助手服务结束 secretKey或host未填写")
-                return False
+	        # 获取DC列表数据
+	        if not self._secretKey or not self._host:
+	            logger.error(f"DC助手服务结束 secretKey或host未填写")
+	            return False
 
-            # 加载模块
-            if self._enabled or self._onlyonce:
-                # 定时服务
-                self._scheduler = BackgroundScheduler(timezone=settings.TZ)
-                # 立即运行一次
-                if self._onlyonce:
-                    logger.info(f"DC助手服务启动，立即运行一次")
-                    if self._backup_cron:
-                        self._scheduler.add_job(self.backup, 'date',
-                                                run_date=datetime.now(
-                                                    tz=pytz.timezone(settings.TZ)) + timedelta(seconds=3),
-                                                name="DC助手-备份")
-                    if self._update_cron:
-                        self._scheduler.add_job(self.updatable, 'date',
-                                                run_date=datetime.now(
-                                                    tz=pytz.timezone(settings.TZ)) + timedelta(seconds=6),
-                                                name="DC助手-自动更新")
-                    if self._auto_update_cron:
-                        self._scheduler.add_job(self.auto_update, 'date',
-                                                run_date=datetime.now(
-                                                    tz=pytz.timezone(settings.TZ)) + timedelta(seconds=10),
-                                                name="DC助手-更新通知")
-                    # 关闭一次性开关
-                    self._onlyonce = False
-                    # 保存配置
-                    self.__update_config()
-                # 周期运行
-                if self._backup_cron:
-                    try:
-                        self._scheduler.add_job(func=self.backup,
-                                                trigger=CronTrigger.from_crontab(self._backup_cron),
-                                                name="DC助手-备份")
-                    except Exception as err:
-                        logger.error(f"定时任务配置错误：{str(err)}")
-                        # 推送实时消息
-                        self.systemmessage.put(f"执行周期配置错误：{err}")
-                if self._update_cron:
-                    try:
-                        self._scheduler.add_job(func=self.updatable,
-                                                trigger=CronTrigger.from_crontab(self._update_cron),
-                                                name="DC助手-更新通知")
-                    except Exception as err:
-                        logger.error(f"定时任务配置错误：{str(err)}")
-                        # 推送实时消息
-                        self.systemmessage.put(f"执行周期配置错误：{err}")
-                if self._auto_update_cron:
-                    try:
-                        self._scheduler.add_job(func=self.auto_update,
-                                                trigger=CronTrigger.from_crontab(self._auto_update_cron),
-                                                name="DC助手-自动更新")
-                    except Exception as err:
-                        logger.error(f"定时任务配置错误：{str(err)}")
-                        # 推送实时消息
-                        self.systemmessage.put(f"执行周期配置错误：{err}")
-                # 启动任务
-                if self._scheduler.get_jobs():
-                    self._scheduler.print_jobs()
-                    self._scheduler.start()
+	        # 加载模块
+	        if self._enabled or self._onlyonce:
+	            # 定时服务
+	            self._scheduler = BackgroundScheduler(timezone=settings.TZ)
+	            # 立即运行一次
+	            if self._onlyonce:
+	                logger.info(f"DC助手服务启动，立即运行一次")
+	                if self._backup_cron:
+	                    self._scheduler.add_job(self.backup, 'date',
+	                                            run_date=datetime.now(
+	                                                tz=pytz.timezone(settings.TZ)) + timedelta(seconds=3),
+	                                            name="DC助手-备份")
+	                if self._update_cron:
+	                    self._scheduler.add_job(self.updatable, 'date',  # 修复这里：使用 updatable 函数
+	                                            run_date=datetime.now(
+	                                                tz=pytz.timezone(settings.TZ)) + timedelta(seconds=6),
+	                                            name="DC助手-更新通知")  # 修复这里：任务名称改为"DC助手-更新通知"
+	                if self._auto_update_cron:
+	                    self._scheduler.add_job(self.auto_update, 'date',  # 修复这里：使用 auto_update 函数
+	                                            run_date=datetime.now(
+	                                                tz=pytz.timezone(settings.TZ)) + timedelta(seconds=10),
+	                                            name="DC助手-自动更新")  # 修复这里：任务名称改为"DC助手-自动更新"
+	                # 关闭一次性开关
+	                self._onlyonce = False
+	                # 保存配置
+	                self.__update_config()
+	            # 周期运行
+	            if self._backup_cron:
+	                try:
+	                    self._scheduler.add_job(func=self.backup,
+	                                            trigger=CronTrigger.from_crontab(self._backup_cron),
+	                                            name="DC助手-备份")
+	                except Exception as err:
+	                    logger.error(f"定时任务配置错误：{str(err)}")
+	                    # 推送实时消息
+	                    self.systemmessage.put(f"执行周期配置错误：{err}")
+	            if self._update_cron:
+	                try:
+	                    self._scheduler.add_job(func=self.updatable,  # 修复这里：使用 updatable 函数
+	                                            trigger=CronTrigger.from_crontab(self._update_cron),
+	                                            name="DC助手-更新通知")  # 修复这里：任务名称改为"DC助手-更新通知"
+	                except Exception as err:
+	                    logger.error(f"定时任务配置错误：{str(err)}")
+	                    # 推送实时消息
+	                    self.systemmessage.put(f"执行周期配置错误：{err}")
+	            if self._auto_update_cron:
+	                try:
+	                    self._scheduler.add_job(func=self.auto_update,  # 修复这里：使用 auto_update 函数
+	                                            trigger=CronTrigger.from_crontab(self._auto_update_cron),
+	                                            name="DC助手-自动更新")  # 修复这里：任务名称改为"DC助手-自动更新"
+	                except Exception as err:
+	                    logger.error(f"定时任务配置错误：{str(err)}")
+	                    # 推送实时消息
+	                    self.systemmessage.put(f"执行周期配置错误：{err}")
+	            # 启动任务
+	            if self._scheduler.get_jobs():
+	                self._scheduler.print_jobs()
+	                self._scheduler.start()
 
 
     def get_state(self) -> bool:
@@ -213,12 +213,10 @@ class DockerCopilotHelper(_PluginBase):
                                      .post_res(url, {"containerName": name, "imageNameAndTag": usingImage}))
                         data = rescanres.json()
                         if data["code"] == 200 and data["msg"] == "success":
-                            # 添加自动更新通知开关检查
-                            if self._auto_update_notify:
-                                self.post_message(
-                                    mtype=NotificationType.Plugin,
-                                    title="【DC助手-自动更新】",
-                                    text=f"【{name}】\n容器更新任务创建成功")
+                            self.post_message(
+                                mtype=NotificationType.Plugin,
+                                title="【DC助手-自动更新】",
+                                text=f"【{name}】\n容器更新任务创建成功")
                             if self._schedule_report:
                                 iteration = 0
                                 while iteration < int(self._intervallimit):
@@ -246,8 +244,7 @@ class DockerCopilotHelper(_PluginBase):
         更新通知
         """
         logger.info("DC助手-更新通知-准备执行")
-        # 添加通知开关检查
-        if self._update_cron and self._updatable_notify:
+        if self._update_cron:
             docker_list = self.get_docker_list()
             logger.debug(f"DC助手-更新通知-{self._updatable_list}")
             for docker in docker_list:
