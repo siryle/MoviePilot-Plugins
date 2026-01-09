@@ -2679,7 +2679,7 @@ class MediaCoverGenerator(_PluginBase):
         default_en_url_multi_1 = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/fonts/multi_1_en.otf"
 
         # 默认角标字体
-        default_badge_url = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/fonts/simhei.ttf"
+        default_badge_url = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/fonts/arialbd.ttf"
 
         is_multi_1_style = self._cover_style == "multi_1"
 
