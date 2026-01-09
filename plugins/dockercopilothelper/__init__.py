@@ -19,7 +19,7 @@ from app.utils.http import RequestUtils
 
 class DockerCopilotHelper(_PluginBase):
     # 插件名称
-    plugin_name = "DC助手"
+    plugin_name = "DC助手AI版"
     # 插件描述
     plugin_desc = "配合DockerCopilot,完成更新通知、自动更改、自动备份功能"
     # 插件图标
@@ -200,14 +200,12 @@ class DockerCopilotHelper(_PluginBase):
                 for container in containers:
                     if container["name"] == name and container["haveUpdate"]:
                         if not container["usingImage"] or container["usingImage"].startswith("sha256:"):
-                            # 只有当开启了更新通知时才发送TAG错误提醒
-                            if self._updatable_notify:
-                                self.post_message(
-                                    mtype=NotificationType.Plugin,
-                                    title="【DC助手-自动更新】",
-                                    text=f"监测到您有容器TAG不正确\n【{container['name']}】\n当前镜像:{container['usingImage']}\n状态:{container['status']} "
-                                         f"{container['runningTime']}\n构建时间：{container['createTime']}\n"
-                                         f"该镜像无法通过DC自动更新,请修改TAG")
+                            self.post_message(
+                                mtype=NotificationType.Plugin,
+                                title="【DC助手-自动更新】",
+                                text=f"监测到您有容器TAG不正确\n【{container['name']}】\n当前镜像:{container['usingImage']}\n状态:{container['status']} "
+                                     f"{container['runningTime']}\n构建时间：{container['createTime']}\n"
+                                     f"该镜像无法通过DC自动更新,请修改TAG")
                             continue
                         url = '%s/api/container/%s/update' % (self._host, container['id'])
                         usingImage = {container['usingImage']}
@@ -215,7 +213,7 @@ class DockerCopilotHelper(_PluginBase):
                                      .post_res(url, {"containerName": name, "imageNameAndTag": usingImage}))
                         data = rescanres.json()
                         if data["code"] == 200 and data["msg"] == "success":
-                            # 只有当开启了自动更新通知时才发送成功通知
+                            # 添加自动更新通知开关检查
                             if self._auto_update_notify:
                                 self.post_message(
                                     mtype=NotificationType.Plugin,
@@ -248,28 +246,25 @@ class DockerCopilotHelper(_PluginBase):
         更新通知
         """
         logger.info("DC助手-更新通知-准备执行")
-        if self._update_cron:
+        # 添加通知开关检查
+        if self._update_cron and self._updatable_notify:
             docker_list = self.get_docker_list()
             logger.debug(f"DC助手-更新通知-{self._updatable_list}")
             for docker in docker_list:
                 if docker["haveUpdate"] and docker["name"] in self._updatable_list:
                     if docker["usingImage"] and not docker["usingImage"].startswith("sha256:"):
-                        # 只有当开启了更新通知时才发送通知
-                        if self._updatable_notify:
-                            self.post_message(
-                                mtype=NotificationType.Plugin,
-                                title="【DC助手-更新通知】",
-                                text=f"您有容器可以更新啦！\n【{docker['name']}】\n当前镜像:{docker['usingImage']}\n状态:{docker['status']} {docker['runningTime']}\n构建时间：{docker['createTime']}")
+                        # 发送通知
+                        self.post_message(
+                            mtype=NotificationType.Plugin,
+                            title="【DC助手-更新通知】",
+                            text=f"您有容器可以更新啦！\n【{docker['name']}】\n当前镜像:{docker['usingImage']}\n状态:{docker['status']} {docker['runningTime']}\n构建时间：{docker['createTime']}")
                     else:
-                        # TAG不正确的情况也只会在开启通知时提醒
-                        if self._updatable_notify:
-                            self.post_message(
-                                mtype=NotificationType.Plugin,
-                                title="【DC助手-更新通知】",
-                                text=f"监测到您有容器TAG不正确\n【{docker['name']}】\n当前镜像:{docker['usingImage']}\n状态:{docker['status']} "
-                                     f"{docker['runningTime']}\n构建时间：{docker['createTime']}\n"
-                                     f"该镜像无法通过DC自动更新,请修改TAG")
-
+                        self.post_message(
+                            mtype=NotificationType.Plugin,
+                            title="【DC助手-更新通知】",
+                            text=f"监测到您有容器TAG不正确\n【{docker['name']}】\n当前镜像:{docker['usingImage']}\n状态:{docker['status']} "
+                                 f"{docker['runningTime']}\n构建时间：{docker['createTime']}\n"
+                                 f"该镜像无法通过DC自动更新,请修改TAG")
     def backup(self):
         """
         备份
@@ -547,25 +542,7 @@ class DockerCopilotHelper(_PluginBase):
                                                             'props': {
                                                                 'model': 'updatecron',
                                                                 'label': '更新通知周期',
-                                                                'placeholder': '15 8-23/2 * * *',
-                                                                'hint': 'Cron表达式，例如：15 8-23/2 * * * 表示每天8点到23点每2小时的第15分钟检查'
-                                                            }
-                                                        }
-                                                    ]
-                                                },
-                                                {
-                                                    'component': 'VCol',
-                                                    'props': {
-                                                        'cols': 12,
-                                                        'md': 6
-                                                    },
-                                                    'content': [
-                                                        {
-                                                            'component': 'VSwitch',
-                                                            'props': {
-                                                                'model': 'updatablenotify',
-                                                                'label': '更新通知开关',
-                                                                'hint': '开启后在有更新时发送通知'
+                                                                'placeholder': '15 8-23/2 * * *'
                                                             }
                                                         }
                                                     ]
@@ -622,8 +599,7 @@ class DockerCopilotHelper(_PluginBase):
                                                                 'props': {
                                                                     'model': 'autoupdatecron',
                                                                     'label': '自动更新周期',
-                                                                    'placeholder': '15 2 * * *',
-                                                                    'hint': 'Cron表达式，例如：15 2 * * * 表示每天凌晨2点15分自动更新'
+                                                                    'placeholder': '15 2 * * *'
                                                                 }
                                                             }
                                                         ]
@@ -774,8 +750,7 @@ class DockerCopilotHelper(_PluginBase):
                                                 'props': {
                                                     'model': 'backupcron',
                                                     'label': '自动备份',
-                                                    'placeholder': '0 7 * * *',
-                                                    'hint': 'Cron表达式，例如：0 7 * * * 表示每天凌晨7点备份'
+                                                    'placeholder': '0 7 * * *'
                                                 }
                                             }
                                         ]
