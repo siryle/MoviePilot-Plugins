@@ -23,9 +23,9 @@ class DockerCopilotHelper(_PluginBase):
     # 插件描述
     plugin_desc = "配合DockerCopilot,完成更新通知、自动更改、自动备份功能"
     # 插件图标
-    plugin_icon = "https://raw.githubusercontent.com/gxterry/MoviePilot-Plugins/main/icons/Docker_Copilot.png"
+    plugin_icon = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/icons/Docker_Copilot.png"
     # 插件版本
-    plugin_version = "1.1.2"
+    plugin_version = "1.2.0"
     # 插件作者
     plugin_author = "gxterry"
     # 作者主页
