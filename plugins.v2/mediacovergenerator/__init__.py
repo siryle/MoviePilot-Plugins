@@ -116,8 +116,8 @@ class MediaCoverGenerator(_PluginBase):
     _badge_font_path_local = ''
     _badge_font_size = 1
     _badge_position = 'top-left'
-    _badge_color = '#FF0000'
-    _badge_text_color = ''  # 新增：角标文字颜色
+    _badge_color = '#52B54B'
+    _badge_text_color = '#FFFFFF'  # 新增：角标文字颜色
     _badge_padding = 10
 
     def __init__(self):
@@ -1088,7 +1088,7 @@ class MediaCoverGenerator(_PluginBase):
                                     'model': 'badge_color',
                                     'label': '角标背景色',
                                     'prependInnerIcon': 'mdi-palette',
-                                    'placeholder': '#FF0000',
+                                    'placeholder': '#52B54B',
                                     'hint': '角标背景颜色，支持HEX或RGB',
                                     'persistentHint': True
                                 }
@@ -1108,7 +1108,7 @@ class MediaCoverGenerator(_PluginBase):
                                     'model': 'badge_text_color',
                                     'label': '角标文字颜色（可选）',
                                     'prependInnerIcon': 'mdi-format-color-text',
-                                    'placeholder': '留空自动计算',
+                                    'placeholder': '#FFFFFF',
                                     'hint': '留空则根据背景色自动计算对比色',
                                     'persistentHint': True
                                 }
@@ -1539,8 +1539,8 @@ class MediaCoverGenerator(_PluginBase):
             "badge_font_path_local": "",
             "badge_font_size": 1,
             "badge_position": "top-left",
-            "badge_color": "#FF0000",
-            "badge_text_color": "",  # 新增：角标文字颜色
+            "badge_color": "#52B54B",
+            "badge_text_color": "#FFFFFF",  # 新增：角标文字颜色
             "badge_padding": 10
         }
 
@@ -2746,14 +2746,14 @@ class MediaCoverGenerator(_PluginBase):
     def __get_fonts(self):
         font_dir_path = self._font_path
 
-        default_zh_url = "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/wendao.ttf"
-        default_en_url = "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/EmblemaOne.woff2"
+        default_zh_url = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/fonts/wendao.ttf"
+        default_en_url = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/fonts/EmblemaOne.woff2"
         
-        default_zh_url_multi_1 = "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/multi_1_zh.ttf"
-        default_en_url_multi_1 = "https://raw.githubusercontent.com/justzerock/MoviePilot-Plugins/main/fonts/multi_1_en.otf"
+        default_zh_url_multi_1 = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/fonts/multi_1_zh.ttf"
+        default_en_url_multi_1 = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/fonts/multi_1_en.otf"
 
         # 默认角标字体
-        default_badge_url = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/refs/heads/main/fonts/multi_1_en.otf"
+        default_badge_url = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/fonts/simhei.ttf"
 
         is_multi_1_style = self._cover_style == "multi_1"
 
