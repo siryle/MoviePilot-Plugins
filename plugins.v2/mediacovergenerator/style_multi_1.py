@@ -744,6 +744,53 @@ def add_film_grain(image, intensity=0.05):
     
     return Image.fromarray(img_array)
 
+def get_text_vertical_position(draw, text, font, rect_y, rect_height, text_height):
+    """
+    获取文本的精确垂直位置，确保在矩形内垂直居中
+    
+    Args:
+        draw: ImageDraw对象
+        text: 文本内容
+        font: 字体对象
+        rect_y: 矩形顶部Y坐标
+        rect_height: 矩形高度
+        text_height: 文本高度
+        
+    Returns:
+        (text_x, text_y): 文本绘制位置
+    """
+    try:
+        # 方法1：使用textbbox获取精确的文本边界
+        bbox = draw.textbbox((0, 0), text, font=font)
+        
+        # 计算文本的实际边界
+        actual_top = bbox[1]
+        actual_bottom = bbox[3]
+        actual_text_height = actual_bottom - actual_top
+        
+        # 计算矩形中心
+        rect_center_y = rect_y + rect_height // 2
+        
+        # 计算文本中心
+        text_center_y = (actual_top + actual_bottom) // 2
+        
+        # 计算需要的偏移
+        text_y = rect_center_y - text_center_y + (actual_text_height - text_height) // 2
+        
+        return text_y
+        
+    except Exception as e:
+        # 方法2：使用更简单的计算
+        logger.debug(f"精确垂直定位失败: {e}")
+        
+        # 计算基本的垂直居中
+        text_y = rect_y + (rect_height - text_height) // 2
+        
+        # 根据常见字体进行微调
+        # 大多数字体需要向上微调3-5%以获得更好的视觉效果
+        vertical_adjustment = int(text_height * 0.04)
+        return text_y - vertical_adjustment
+
 def add_badge_to_image(image, number, font_path=None, font_size=1.0,
                       position='top-left', bg_color='#FF0000', text_color=None, padding=10):
     """
@@ -859,7 +906,7 @@ def add_badge_to_image(image, number, font_path=None, font_size=1.0,
         
         # 计算文本位置（居中对齐）
         text_x = rect_x + (rect_width - text_width) // 2
-        text_y = rect_y + (rect_height - text_height) // 2
+        text_y = get_text_vertical_position(draw, number_str, font, rect_y, rect_height, text_height)
         
         # 解析文字颜色（如果未提供，则使用白色）
         if text_color:
