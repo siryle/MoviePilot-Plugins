@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-
 from typing import Optional, Any, List, Dict, Tuple
 import time
 import pytz
@@ -9,7 +8,6 @@ from requests import Session, Response
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from app.core.event import eventmanager, Event
-
 from app.core.config import settings
 from app.log import logger
 from app.plugins import _PluginBase
@@ -121,7 +119,7 @@ class DockerCopilotHelper(_PluginBase):
                     except Exception as err:
                         logger.error(f"定时任务配置错误：{str(err)}")
                         # 推送实时消息
-                        self.systemmessage.put(f"执行周期配置错误：{err}")
+                        self.systemmessage.put(f"❌ 执行周期配置错误：{err}")
                 if self._update_cron:
                     try:
                         self._scheduler.add_job(func=self.updatable,  # 修复这里：使用 updatable 函数
@@ -130,7 +128,7 @@ class DockerCopilotHelper(_PluginBase):
                     except Exception as err:
                         logger.error(f"定时任务配置错误：{str(err)}")
                         # 推送实时消息
-                        self.systemmessage.put(f"执行周期配置错误：{err}")
+                        self.systemmessage.put(f"❌ 执行周期配置错误：{err}")
                 if self._auto_update_cron:
                     try:
                         self._scheduler.add_job(func=self.auto_update,  # 修复这里：使用 auto_update 函数
@@ -139,7 +137,7 @@ class DockerCopilotHelper(_PluginBase):
                     except Exception as err:
                         logger.error(f"定时任务配置错误：{str(err)}")
                         # 推送实时消息
-                        self.systemmessage.put(f"执行周期配置错误：{err}")
+                        self.systemmessage.put(f"❌ 执行周期配置错误：{err}")
                 # 启动任务
                 if self._scheduler.get_jobs():
                     self._scheduler.print_jobs()
@@ -202,10 +200,10 @@ class DockerCopilotHelper(_PluginBase):
                         if not container["usingImage"] or container["usingImage"].startswith("sha256:"):
                             self.post_message(
                                 mtype=NotificationType.Plugin,
-                                title="【DC助手-自动更新】",
-                                text=f"监测到您有容器TAG不正确\n【{container['name']}】\n当前镜像:{container['usingImage']}\n状态:{container['status']} "
-                                     f"{container['runningTime']}\n构建时间：{container['createTime']}\n"
-                                     f"该镜像无法通过DC自动更新,请修改TAG")
+                                title="🔧 【DC助手-自动更新】",
+                                text=f"⚠️ 监测到您有容器TAG不正确\n📦 【{container['name']}】\n🔹 当前镜像:{container['usingImage']}\n🔸 状态:{container['status']} "
+                                 f"{container['runningTime']}\n📅 构建时间：{container['createTime']}\n"
+                                 f"❌ 该镜像无法通过DC自动更新,请修改TAG")
                             continue
                         url = '%s/api/container/%s/update' % (self._host, container['id'])
                         usingImage = {container['usingImage']}
@@ -215,8 +213,8 @@ class DockerCopilotHelper(_PluginBase):
                         if data["code"] == 200 and data["msg"] == "success":
                             self.post_message(
                                 mtype=NotificationType.Plugin,
-                                title="【DC助手-自动更新】",
-                                text=f"【{name}】\n容器更新任务创建成功")
+                                title="✅ 【DC助手-自动更新】",
+                                text=f"📦 【{name}】\n✅ 容器更新任务创建成功")
                             if self._schedule_report:
                                 iteration = 0
                                 while iteration < int(self._intervallimit):
@@ -227,8 +225,8 @@ class DockerCopilotHelper(_PluginBase):
                                     if report_json["code"] == 200:
                                         self.post_message(
                                             mtype=NotificationType.Plugin,
-                                            title="【DC助手-更新进度】",
-                                            text=f"【{name}】\n进度：{report_json['msg']}"
+                                            title="📊 【DC助手-更新进度】",
+                                            text=f"📦 【{name}】\n📈 进度：{report_json['msg']}"
                                         )
                                         if report_json["msg"] == "更新成功":
                                             break
@@ -253,15 +251,15 @@ class DockerCopilotHelper(_PluginBase):
                         # 发送通知
                         self.post_message(
                             mtype=NotificationType.Plugin,
-                            title="【DC助手-更新通知】",
-                            text=f"您有容器可以更新啦！\n【{docker['name']}】\n当前镜像:{docker['usingImage']}\n状态:{docker['status']} {docker['runningTime']}\n构建时间：{docker['createTime']}")
+                            title="🔔 【DC助手-更新通知】",
+                            text=f"🎉 您有容器可以更新啦！\n📦 【{docker['name']}】\n🔹 当前镜像:{docker['usingImage']}\n🔸 状态:{docker['status']} {docker['runningTime']}\n📅 构建时间：{docker['createTime']}")
                     else:
                         self.post_message(
                             mtype=NotificationType.Plugin,
-                            title="【DC助手-更新通知】",
-                            text=f"监测到您有容器TAG不正确\n【{docker['name']}】\n当前镜像:{docker['usingImage']}\n状态:{docker['status']} "
-                                 f"{docker['runningTime']}\n构建时间：{docker['createTime']}\n"
-                                 f"该镜像无法通过DC自动更新,请修改TAG")
+                            title="⚠️ 【DC助手-更新通知】",
+                            text=f"⚠️ 监测到您有容器TAG不正确\n📦 【{docker['name']}】\n🔹 当前镜像:{docker['usingImage']}\n🔸 状态:{docker['status']} "
+                             f"{docker['runningTime']}\n📅 构建时间：{docker['createTime']}\n"
+                             f"❌ 该镜像无法通过DC自动更新,请修改TAG")
     def backup(self):
         """
         备份
@@ -276,15 +274,15 @@ class DockerCopilotHelper(_PluginBase):
                 if self._backups_notify:
                     self.post_message(
                         mtype=NotificationType.Plugin,
-                        title="【DC助手-备份成功】",
-                        text=f"镜像备份成功！")
+                        title="✅ 【DC助手-备份成功】",
+                        text=f"💾 镜像备份成功！")
                 logger.info(f"DC-备份完成")
             else:
                 if self._backups_notify:
                     self.post_message(
                         mtype=NotificationType.Plugin,
-                        title="【DC助手-备份失败】",
-                        text=f"镜像备份失败拉~！\n【失败原因】:{data['msg']}")
+                        title="❌ 【DC助手-备份失败】",
+                        text=f"❌ 镜像备份失败拉~！\n⚠️ 【失败原因】:{data['msg']}")
                 logger.error(f"DC-备份失败 Error code: {data['code']}, message: {data['msg']}")
         except Exception as e:
             logger.error(f"DC-备份失败,网络异常,请检查DockerCopilot服务是否正常: {str(e)}")
@@ -719,8 +717,8 @@ class DockerCopilotHelper(_PluginBase):
                                             }, ]
                                     }]
                                 }]
-                        }]
-                    },
+                            }]
+                        },
                     {
                         'component': 'VWindow',
                         'props': {
@@ -803,23 +801,23 @@ class DockerCopilotHelper(_PluginBase):
             logger.error("退出插件失败：%s" % str(e))
 
     def delete_res(self, url: str,
-                   headers:dict = None,
-                   params: dict = None,
-                   data: Any = None,
-                   json: dict = None,
-                   allow_redirects: bool = True,
-                   raise_exception: bool = False
-                   ) -> Optional[Response]:
+                  headers:dict = None,
+                  params: dict = None,
+                  data: Any = None,
+                  json: dict = None,
+                  allow_redirects: bool = True,
+                  raise_exception: bool = False
+                  ) -> Optional[Response]:
         try:
             return requests.delete(url,
-                                   params=params,
-                                   data=data,
-                                   json=json,
-                                   verify=False,
-                                   headers=headers,
-                                   timeout=20,
-                                   allow_redirects=allow_redirects,
-                                   stream=False)
+                                  params=params,
+                                  data=data,
+                                  json=json,
+                                  verify=False,
+                                  headers=headers,
+                                  timeout=20,
+                                  allow_redirects=allow_redirects,
+                                  stream=False)
         except requests.exceptions.RequestException:
             if raise_exception:
                 raise requests.exceptions.RequestException
