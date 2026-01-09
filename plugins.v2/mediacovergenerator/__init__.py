@@ -118,7 +118,7 @@ class MediaCoverGenerator(_PluginBase):
     _badge_position = 'top-left'
     _badge_color = '#52B54B'
     _badge_text_color = '#FFFFFF'  # 新增：角标文字颜色
-    _badge_padding = 10
+    _badge_padding = 50
 
     def __init__(self):
         super().__init__()
@@ -177,9 +177,9 @@ class MediaCoverGenerator(_PluginBase):
             self._badge_font_path_local = config.get("badge_font_path_local")
             self._badge_font_size = config.get("badge_font_size") or 1
             self._badge_position = config.get("badge_position") or 'top-left'
-            self._badge_color = config.get("badge_color") or '#FF0000'
-            self._badge_text_color = config.get("badge_text_color") or ''  # 新增
-            self._badge_padding = config.get("badge_padding") or 10
+            self._badge_color = config.get("badge_color") or '#52B54B'
+            self._badge_text_color = config.get("badge_text_color") or '#FFFFFF'  # 新增
+            self._badge_padding = config.get("badge_padding") or 50
 
         if self._selected_servers:
             self._servers = self.mediaserver_helper.get_services(
@@ -1128,7 +1128,7 @@ class MediaCoverGenerator(_PluginBase):
                                     'model': 'badge_padding',
                                     'label': '角标内边距',
                                     'prependInnerIcon': 'mdi-arrow-expand',
-                                    'placeholder': '10',
+                                    'placeholder': '50',
                                     'hint': '角标数字与边框的距离（像素）',
                                     'persistentHint': True
                                 }
@@ -1541,7 +1541,7 @@ class MediaCoverGenerator(_PluginBase):
             "badge_position": "top-left",
             "badge_color": "#52B54B",
             "badge_text_color": "#FFFFFF",  # 新增：角标文字颜色
-            "badge_padding": 10
+            "badge_padding": 50
         }
 
     def get_page(self) -> List[dict]:
