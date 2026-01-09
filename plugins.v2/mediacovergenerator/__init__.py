@@ -178,7 +178,7 @@ class MediaCoverGenerator(_PluginBase):
             self._badge_font_size = config.get("badge_font_size") or 1
             self._badge_position = config.get("badge_position") or 'top-left'
             self._badge_color = config.get("badge_color") or '#52B54B'
-            self._badge_text_color = config.get("badge_text_color") or '#FFFFFF'  # 新增
+            self._badge_text_color = config.get("badge_text_color") or ''  # 新增
             self._badge_padding = config.get("badge_padding") or 50
 
         if self._selected_servers:
