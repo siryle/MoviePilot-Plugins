@@ -4,7 +4,7 @@
         "description": "配合DockerCopilot,完成更新通知、自动更新、自动备份功能",
         "labels": "Docker",
         "version": "1.2.0",
-        "icon": "https://raw.githubusercontent.com/gxterry/MoviePilot-Plugins/main/icons/Docker_Copilot.png",
+        "icon": "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/icons/Docker_Copilot.png",
         "author": "gxterry",
         "level": 1,
         "history": {
