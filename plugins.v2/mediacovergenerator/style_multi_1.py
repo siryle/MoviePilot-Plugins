@@ -832,7 +832,7 @@ def add_badge_to_image(image, number, font_path=None, font_size=1.0,
         
         # 计算圆角矩形尺寸（文本宽高加上内边距）
         rect_width = text_width + padding * 2
-        rect_height = text_height + padding * 1.5  # 上下内边距稍小一些
+        rect_height = text_height + padding * 2
         
         # 计算圆角半径（高度的30%）
         corner_radius = int(rect_height * 0.3)

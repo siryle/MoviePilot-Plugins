@@ -1737,6 +1737,9 @@ class MediaCoverGenerator(_PluginBase):
             if not badge_text_color:
                 badge_text_color = self.__calculate_contrast_color(self._badge_color)
             
+            # 确保内边距为整数，并应用到所有方向
+            badge_padding = int(self._badge_padding) if self._badge_padding else 50
+            
             badge_params = {
                 'badge_number': badge_number,
                 'badge_font_path': str(self._badge_font_path) if self._badge_font_path else None,
@@ -1744,7 +1747,7 @@ class MediaCoverGenerator(_PluginBase):
                 'badge_position': self._badge_position,
                 'badge_color': self._badge_color,
                 'badge_text_color': badge_text_color,  # 新增：计算出的文字颜色
-                'badge_padding': int(self._badge_padding)
+                'badge_padding': badge_padding  # 确保是整数
             }
 
         if self._cover_style == 'single_1':
@@ -1776,7 +1779,7 @@ class MediaCoverGenerator(_PluginBase):
                                                 color_ratio=color_ratio_multi_1,
                                                 **badge_params)
         return image_data
-    
+
     def __calculate_contrast_color(self, bg_color):
         """
         根据背景色计算对比鲜明的文字颜色
