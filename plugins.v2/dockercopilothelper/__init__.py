@@ -31,7 +31,7 @@ class DockerCopilotHelper(_PluginBase):
     主要功能：
     1. 容器更新通知：定期检查指定容器是否有更新，并发送通知
     2. 自动更新：自动更新指定的容器
-    3. 自动备份：定期备份 Docker 镜像
+    3. 自动备份：定期备份 Docker 配置
     4. 镜像清理：清理无用的 Docker 镜像
     """
     
@@ -256,10 +256,10 @@ class DockerCopilotHelper(_PluginBase):
 
     def backup(self):
         """
-        备份 Docker 镜像
+        备份 Docker 配置
         
         功能：
-        1. 调用 DockerCopilot API 备份所有镜像
+        1. 调用 DockerCopilot API 备份所有Docker 配置
         2. 发送备份成功/失败通知（如果启用）
         3. 更新备份统计信息
         """
@@ -816,7 +816,7 @@ class DockerCopilotHelper(_PluginBase):
             if self._backups_notify:
                 self._send_notification(
                     title="✅ 【DC助手-备份成功】",
-                    text="💾 镜像备份成功！"
+                    text="💾 Docker备份成功！"
                 )
                 
         else:
@@ -827,7 +827,7 @@ class DockerCopilotHelper(_PluginBase):
             if self._backups_notify:
                 self._send_notification(
                     title="❌ 【DC助手-备份失败】",
-                    text=f"❌ 镜像备份失败拉~！\n⚠️ 【失败原因】:{data.get('msg', '未知错误')}"
+                    text=f"❌ Docker备份失败拉~！\n⚠️ 【失败原因】:{data.get('msg', '未知错误')}"
                 )
 
     def _send_notification(self, title: str, text: str):
