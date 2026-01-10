@@ -41,7 +41,7 @@ class mediaservermsgai(_PluginBase):
     plugin_name = "媒体库服务器通知AI版"
     plugin_desc = "基于Emby识别结果+TMDB元数据+微信清爽版(全消息类型+剧集聚合+未识别过滤)"
     plugin_icon = "mediaplay.png"
-    plugin_version = "1.9.1"
+    plugin_version = "1.9.2"
     plugin_author = "jxxghp"
     author_url = "https://github.com/jxxghp"
     plugin_config_prefix = "mediaservermsgai_"
@@ -1342,10 +1342,10 @@ class mediaservermsgai(_PluginBase):
         if event_info.season_id is not None and event_info.episode_id is not None:
             s_str, e_str = str(event_info.season_id).zfill(2), str(event_info.episode_id).zfill(2)
             info = f"📺 季集：S{s_str}E{e_str}"
-            ep_name = event_info.json_object.get('Item', {}).get('Name')
-            if ep_name and ep_name != series_name: 
-                info += f" - {ep_name}"
-                logger.debug(f"剧集名称: {ep_name}")
+            #ep_name = event_info.json_object.get('Item', {}).get('Name')
+            #if ep_name and ep_name != series_name: 
+                #info += f" - {ep_name}"
+                #logger.debug(f"剧集名称: {ep_name}")
             texts.append(info)
             logger.debug(f"季集信息: {info}")
         elif description := event_info.json_object.get('Description'):
