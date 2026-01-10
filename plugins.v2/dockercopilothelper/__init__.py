@@ -39,7 +39,7 @@ class DockerCopilotHelper(_PluginBase):
     plugin_name = "DC助手AI版"
     plugin_desc = "配合DockerCopilot,完成更新通知、自动更改、自动备份功能"
     plugin_icon = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/icons/Docker_Copilot.png"
-    plugin_version = "2.0.0"
+    plugin_version = "2.0.1"
     plugin_author = "gxterry"
     author_url = "https://github.com/gxterry"
     plugin_config_prefix = "dockercopilothelper_"
