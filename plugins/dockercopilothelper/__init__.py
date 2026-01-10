@@ -202,32 +202,36 @@ class DockerCopilotHelper(_PluginBase):
                                 mtype=NotificationType.Plugin,
                                 title="🔧 【DC助手-自动更新】",
                                 text=f"⚠️ 监测到您有容器TAG不正确\n📦 【{container['name']}】\n🔹 当前镜像:{container['usingImage']}\n🔸 状态:{container['status']} "
-                                 f"{container['runningTime']}\n📅 构建时间：{container['createTime']}\n"
-                                 f"❌ 该镜像无法通过DC自动更新,请修改TAG")
+                                f"{container['runningTime']}\n📅 构建时间：{container['createTime']}\n"
+                                f"❌ 该镜像无法通过DC自动更新,请修改TAG")
                             continue
                         url = '%s/api/container/%s/update' % (self._host, container['id'])
                         usingImage = {container['usingImage']}
                         rescanres = (RequestUtils(headers={"Authorization": jwt})
-                                     .post_res(url, {"containerName": name, "imageNameAndTag": usingImage}))
+                                    .post_res(url, {"containerName": name, "imageNameAndTag": usingImage}))
                         data = rescanres.json()
                         if data["code"] == 200 and data["msg"] == "success":
-                            self.post_message(
-                                mtype=NotificationType.Plugin,
-                                title="✅ 【DC助手-自动更新】",
-                                text=f"📦 【{name}】\n✅ 容器更新任务创建成功")
+                            # 只有在开启自动更新通知时才发送通知
+                            if self._auto_update_notify:
+                                self.post_message(
+                                    mtype=NotificationType.Plugin,
+                                    title="✅ 【DC助手-自动更新】",
+                                    text=f"📦 【{name}】\n✅ 容器更新任务创建成功")
                             if self._schedule_report:
                                 iteration = 0
                                 while iteration < int(self._intervallimit):
                                     url = '%s/api/progress/%s' % (self._host, data["data"]["taskID"])
                                     rescanres = (RequestUtils(headers={"Authorization": jwt})
-                                                 .get_res(url))
+                                                .get_res(url))
                                     report_json = rescanres.json()
                                     if report_json["code"] == 200:
-                                        self.post_message(
-                                            mtype=NotificationType.Plugin,
-                                            title="📊 【DC助手-更新进度】",
-                                            text=f"📦 【{name}】\n📈 进度：{report_json['msg']}"
-                                        )
+                                        # 如果开启了进度汇报且开启了通知，才发送进度通知
+                                        if self._auto_update_notify:
+                                            self.post_message(
+                                                mtype=NotificationType.Plugin,
+                                                title="📊 【DC助手-更新进度】",
+                                                text=f"📦 【{name}】\n📈 进度：{report_json['msg']}"
+                                            )
                                         if report_json["msg"] == "更新成功":
                                             break
                                     else:
@@ -236,7 +240,7 @@ class DockerCopilotHelper(_PluginBase):
                                     if iteration >= int(self._intervallimit):
                                         logger.info(f'DC助手-更新进度追踪--{name}-超时')
                                     time.sleep(int(self._interval))  # 暂停N秒后继续下一次请求
-
+                                    
     def updatable(self):
         """
         更新通知
