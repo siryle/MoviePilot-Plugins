@@ -77,11 +77,12 @@
         "name": "DC助手AI版",
         "description": "配合DockerCopilot,完成更新通知、自动更新、自动备份功能",
         "labels": "Docker",
-        "version": "2.0.0",
+        "version": "2.0.1",
         "icon": "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/icons/Docker_Copilot.png",
         "author": "gxterry",
         "level": 1,
         "history": {
+            "v2.0.1": "AI优化日志、注释",
             "v2.0.0": "AI重构支持v2插件",
             "v1.2.1": "AI添加消息通知emoji前缀",
             "v1.2.0": "AI修复未开启自动更新通知时依旧会收到通知",
