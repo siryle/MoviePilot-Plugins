@@ -211,6 +211,7 @@ class DockerCopilotHelper(_PluginBase):
                                     .post_res(url, {"containerName": name, "imageNameAndTag": usingImage}))
                         data = rescanres.json()
                         if data["code"] == 200 and data["msg"] == "success":
+                            logger.info(f"{name} 容器更新任务创建成功")
                             # 只有在开启自动更新通知时才发送通知
                             if self._auto_update_notify:
                                 self.post_message(
@@ -225,6 +226,7 @@ class DockerCopilotHelper(_PluginBase):
                                                 .get_res(url))
                                     report_json = rescanres.json()
                                     if report_json["code"] == 200:
+                                        logger.info(f"{name} 进度：{report_json['msg']}")
                                         # 如果开启了进度汇报且开启了通知，才发送进度通知
                                         if self._auto_update_notify:
                                             self.post_message(
@@ -233,6 +235,7 @@ class DockerCopilotHelper(_PluginBase):
                                                 text=f"📦 【{name}】\n📈 进度：{report_json['msg']}"
                                             )
                                         if report_json["msg"] == "更新成功":
+                                            logger.info(f"{name} 更新成功")
                                             break
                                     else:
                                         pass
@@ -257,6 +260,7 @@ class DockerCopilotHelper(_PluginBase):
                             mtype=NotificationType.Plugin,
                             title="🔔 【DC助手-更新通知】",
                             text=f"🎉 您有容器可以更新啦！\n📦 【{docker['name']}】\n🔹 当前镜像:{docker['usingImage']}\n🔸 状态:{docker['status']} {docker['runningTime']}\n📅 构建时间：{docker['createTime']}")
+                        logger.info(f"您有容器可以更新啦:{docker['name']} 当前镜像:{docker['usingImage']} 状态:{docker['status']} {docker['runningTime']}  构建时间：{docker['createTime']}")
                     else:
                         self.post_message(
                             mtype=NotificationType.Plugin,
@@ -264,6 +268,7 @@ class DockerCopilotHelper(_PluginBase):
                             text=f"⚠️ 监测到您有容器TAG不正确\n📦 【{docker['name']}】\n🔹 当前镜像:{docker['usingImage']}\n🔸 状态:{docker['status']} "
                              f"{docker['runningTime']}\n📅 构建时间：{docker['createTime']}\n"
                              f"❌ 该镜像无法通过DC自动更新,请修改TAG")
+                        logger.info(f"监测到您有容器TAG不正确 {docker['name']} 当前镜像:{docker['usingImage']} 状态:{docker['status']} {docker['runningTime']} 构建时间：{docker['createTime']} 该镜像无法通过DC自动更新,请修改TAG")
     def backup(self):
         """
         备份
