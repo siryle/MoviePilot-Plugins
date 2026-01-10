@@ -620,7 +620,7 @@ class mediaservermsgai(_PluginBase):
                         logger.error(f"识别TMDB媒体异常: {str(e)}")
 
                 # 标题构造
-                title_name = tmdb_info.title if (tmdb_info and tmdb_info.title) else title_name = event_info.item_name
+                title_name = tmdb_info.title if (tmdb_info and tmdb_info.title) else event_info.item_name
                 logger.debug(f"原始标题: {title_name}")
                 
                 year = tmdb_info.year if (tmdb_info and tmdb_info.year) else event_info.json_object.get('Item', {}).get('ProductionYear')
