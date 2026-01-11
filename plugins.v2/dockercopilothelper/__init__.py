@@ -1,7 +1,7 @@
 """
 DockerCopilotHelper 插件 - V2 版本
 功能：配合 DockerCopilot 完成容器更新通知、自动更新、自动备份等功能
-版本：2.0.0
+版本：2.0.2
 作者：gxterry
 """
 
@@ -39,7 +39,7 @@ class DockerCopilotHelper(_PluginBase):
     plugin_name = "DC助手AI版"
     plugin_desc = "配合DockerCopilot,完成更新通知、自动更改、自动备份功能"
     plugin_icon = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/icons/Docker_Copilot.png"
-    plugin_version = "2.0.1"
+    plugin_version = "2.0.2"
     plugin_author = "gxterry"
     author_url = "https://github.com/gxterry"
     plugin_config_prefix = "dockercopilothelper_"
@@ -1046,30 +1046,30 @@ class DockerCopilotHelper(_PluginBase):
                 "content": [
                     # 第一行：启用开关和立即运行
                     {
-                        'component': 'VRow',
-                        'content': [
+                        "component": "VRow",
+                        "content": [
                             {
-                                'component': 'VCol',
-                                'props': {'cols': 12, 'md': 6},
-                                'content': [
+                                "component": "VCol",
+                                "props": {"cols": 12, "md": 6},
+                                "content": [
                                     {
-                                        'component': 'VSwitch',
-                                        'props': {
-                                            'model': 'enabled',
-                                            'label': '启用插件',
+                                        "component": "VSwitch",
+                                        "props": {
+                                            "model": "enabled",
+                                            "label": "启用插件",
                                         }
                                     }
                                 ]
                             },
                             {
-                                'component': 'VCol',
-                                'props': {'cols': 12, 'md': 6},
-                                'content': [
+                                "component": "VCol",
+                                "props": {"cols": 12, "md": 6},
+                                "content": [
                                     {
-                                        'component': 'VSwitch',
-                                        'props': {
-                                            'model': 'onlyonce',
-                                            'label': '立即运行一次',
+                                        "component": "VSwitch",
+                                        "props": {
+                                            "model": "onlyonce",
+                                            "label": "立即运行一次",
                                         }
                                     }
                                 ]
@@ -1079,34 +1079,34 @@ class DockerCopilotHelper(_PluginBase):
                     
                     # 第二行：服务器配置
                     {
-                        'component': 'VRow',
-                        'content': [
+                        "component": "VRow",
+                        "content": [
                             {
-                                'component': 'VCol',
-                                'props': {'cols': 12, 'md': 6},
-                                'content': [
+                                "component": "VCol",
+                                "props": {"cols": 12, "md": 6},
+                                "content": [
                                     {
-                                        'component': 'VTextField',
-                                        'props': {
-                                            'model': 'host',
-                                            'label': '服务器地址',
-                                            'placeholder': 'http://localhost:8080',
-                                            'hint': 'DockerCopilot服务地址'
+                                        "component": "VTextField",
+                                        "props": {
+                                            "model": "host",
+                                            "label": "服务器地址",
+                                            "placeholder": "http://localhost:8080",
+                                            "hint": "DockerCopilot服务地址"
                                         }
                                     }
                                 ]
                             },
                             {
-                                'component': 'VCol',
-                                'props': {'cols': 12, 'md': 6},
-                                'content': [
+                                "component": "VCol",
+                                "props": {"cols": 12, "md": 6},
+                                "content": [
                                     {
-                                        'component': 'VTextField',
-                                        'props': {
-                                            'model': 'secretKey',
-                                            'label': 'DockerCopilot密钥',
-                                            'placeholder': 'DockerCopilot密钥',
-                                            'hint': '环境变量查看'
+                                        "component": "VTextField",
+                                        "props": {
+                                            "model": "secretKey",
+                                            "label": "DockerCopilot密钥",
+                                            "placeholder": "DockerCopilot密钥",
+                                            "hint": "环境变量查看"
                                         }
                                     }
                                 ]
@@ -1116,31 +1116,31 @@ class DockerCopilotHelper(_PluginBase):
                     
                     # 第三行：标签页
                     {
-                        'component': 'VRow',
-                        'content': [{
-                            'component': 'VCol',
-                            'props': {'cols': 12},
-                            'content': [{
-                                'component': 'VTabs',
-                                'props': {
-                                    'model': '_tabs',
-                                    'height': 40,
+                        "component": "VRow",
+                        "content": [{
+                            "component": "VCol",
+                            "props": {"cols": 12},
+                            "content": [{
+                                "component": "VTabs",
+                                "props": {
+                                    "model": "_tabs",
+                                    "height": 40,
                                 },
-                                'content': [
+                                "content": [
                                     {
-                                        'component': 'VTab',
-                                        'props': {'value': 'C1'},
-                                        'text': '更新通知'
+                                        "component": "VTab",
+                                        "props": {"value": "C1"},
+                                        "text": "更新通知"
                                     },
                                     {
-                                        'component': 'VTab',
-                                        'props': {'value': 'C2'},
-                                        'text': '自动更新'
+                                        "component": "VTab",
+                                        "props": {"value": "C2"},
+                                        "text": "自动更新"
                                     },
                                     {
-                                        'component': 'VTab',
-                                        'props': {'value': 'C3'},
-                                        'text': '自动备份'
+                                        "component": "VTab",
+                                        "props": {"value": "C3"},
+                                        "text": "自动备份"
                                     }
                                 ]
                             }]
@@ -1149,9 +1149,9 @@ class DockerCopilotHelper(_PluginBase):
                     
                     # 第四行：标签页内容
                     {
-                        'component': 'VWindow',
-                        'props': {'model': '_tabs'},
-                        'content': [
+                        "component": "VWindow",
+                        "props": {"model": "_tabs"},
+                        "content": [
                             # 标签页1：更新通知
                             self._build_update_notify_tab(updatable_list),
                             
@@ -1177,24 +1177,24 @@ class DockerCopilotHelper(_PluginBase):
             Dict: 标签页配置
         """
         return {
-            'component': 'VWindowItem',
-            'props': {'value': 'C1', 'style': {'margin-top': '30px'}},
-            'content': [
+            "component": "VWindowItem",
+            "props": {"value": "C1", "style": {"margin-top": "30px"}},
+            "content": [
                 # 定时配置
                 {
-                    'component': 'VRow',
-                    'content': [
+                    "component": "VRow",
+                    "content": [
                         {
-                            'component': 'VCol',
-                            'props': {'cols': 12, 'md': 6},
-                            'content': [
+                            "component": "VCol",
+                            "props": {"cols": 12, "md": 6},
+                            "content": [
                                 {
-                                    'component': 'VTextField',
-                                    'props': {
-                                        'model': 'updatecron',
-                                        'label': '更新通知周期',
-                                        'placeholder': '15 8-23/2 * * *',
-                                        'hint': 'Cron表达式'
+                                    "component": "VTextField",
+                                    "props": {
+                                        "model": "updatecron",
+                                        "label": "更新通知周期",
+                                        "placeholder": "15 8-23/2 * * *",
+                                        "hint": "Cron表达式"
                                     }
                                 }
                             ]
@@ -1207,18 +1207,18 @@ class DockerCopilotHelper(_PluginBase):
                     "component": "VRow",
                     "content": [
                         {
-                            'component': 'VCol',
-                            'props': {'cols': 12},
-                            'content': [
+                            "component": "VCol",
+                            "props": {"cols": 12},
+                            "content": [
                                 {
-                                    'component': 'VSelect',
-                                    'props': {
-                                        'chips': True,
-                                        'multiple': True,
-                                        'model': 'updatablelist',
-                                        'label': '更新通知容器',
-                                        'items': updatable_list,
-                                        'hint': '选择容器在有更新时发送通知'
+                                    "component": "VSelect",
+                                    "props": {
+                                        "chips": True,
+                                        "multiple": True,
+                                        "model": "updatablelist",
+                                        "label": "更新通知容器",
+                                        "items": updatable_list,
+                                        "hint": "选择容器在有更新时发送通知"
                                     }
                                 }
                             ]
@@ -1239,54 +1239,54 @@ class DockerCopilotHelper(_PluginBase):
             Dict: 标签页配置
         """
         return {
-            'component': 'VWindowItem',
-            'props': {'value': 'C2', 'style': {'margin-top': '30px'}},
-            'content': [
+            "component": "VWindowItem",
+            "props": {"value": "C2", "style": {"margin-top": "30px"}},
+            "content": [
                 # 定时和跟踪配置
                 {
-                    'component': 'VRow',
-                    'content': [
+                    "component": "VRow",
+                    "content": [
                         {
-                            'component': 'VCol',
-                            'props': {'cols': 12, 'md': 6},
-                            'content': [
+                            "component": "VCol",
+                            "props": {"cols": 12, "md": 6},
+                            "content": [
                                 {
-                                    'component': 'VTextField',
-                                    'props': {
-                                        'model': 'autoupdatecron',
-                                        'label': '自动更新周期',
-                                        'placeholder': '15 2 * * *',
-                                        'hint': 'Cron表达式'
+                                    "component": "VTextField",
+                                    "props": {
+                                        "model": "autoupdatecron",
+                                        "label": "自动更新周期",
+                                        "placeholder": "15 2 * * *",
+                                        "hint": "Cron表达式"
                                     }
                                 }
                             ]
                         },
                         {
-                            'component': 'VCol',
-                            'props': {'cols': 12, 'md': 3},
-                            'content': [
+                            "component": "VCol",
+                            "props": {"cols": 12, "md": 3},
+                            "content": [
                                 {
-                                    'component': 'VTextField',
-                                    'props': {
-                                        'model': 'interval',
-                                        'label': '跟踪间隔(秒)',
-                                        'placeholder': '10',
-                                        'hint': '开启进度汇报时,每多少秒检查一次进度状态，默认10秒'
+                                    "component": "VTextField",
+                                    "props": {
+                                        "model": "interval",
+                                        "label": "跟踪间隔(秒)",
+                                        "placeholder": "10",
+                                        "hint": "开启进度汇报时,每多少秒检查一次进度状态，默认10秒"
                                     }
                                 }
                             ]
                         },
                         {
-                            'component': 'VCol',
-                            'props': {'cols': 12, 'md': 3},
-                            'content': [
+                            "component": "VCol",
+                            "props": {"cols": 12, "md": 3},
+                            "content": [
                                 {
-                                    'component': 'VTextField',
-                                    'props': {
-                                        'model': 'intervallimit',
-                                        'label': '检查次数',
-                                        'placeholder': '6',
-                                        'hint': '开启进度汇报，当达限制检查次数后放弃追踪,默认6次'
+                                    "component": "VTextField",
+                                    "props": {
+                                        "model": "intervallimit",
+                                        "label": "检查次数",
+                                        "placeholder": "6",
+                                        "hint": "开启进度汇报，当达限制检查次数后放弃追踪,默认6次"
                                     }
                                 }
                             ]
@@ -1296,46 +1296,46 @@ class DockerCopilotHelper(_PluginBase):
                 
                 # 功能开关
                 {
-                    'component': 'VRow',
-                    'content': [
+                    "component": "VRow",
+                    "content": [
                         {
-                            'component': 'VCol',
-                            'props': {'cols': 12, 'md': 4},
-                            'content': [
+                            "component": "VCol",
+                            "props": {"cols": 12, "md": 4},
+                            "content": [
                                 {
-                                    'component': 'VSwitch',
-                                    'props': {
-                                        'model': 'autoupdatenotify',
-                                        'label': '自动更新通知',
-                                        'hint': '更新任务创建成功发送通知'
+                                    "component": "VSwitch",
+                                    "props": {
+                                        "model": "autoupdatenotify",
+                                        "label": "自动更新通知",
+                                        "hint": "更新任务创建成功发送通知"
                                     }
                                 }
                             ]
                         },
                         {
-                            'component': 'VCol',
-                            'props': {'cols': 12, 'md': 4},
-                            'content': [
+                            "component": "VCol",
+                            "props": {"cols": 12, "md": 4},
+                            "content": [
                                 {
-                                    'component': 'VSwitch',
-                                    'props': {
-                                        'model': 'schedulereport',
-                                        'label': '进度汇报',
-                                        'hint': '追踪更新任务进度并发送通知'
+                                    "component": "VSwitch",
+                                    "props": {
+                                        "model": "schedulereport",
+                                        "label": "进度汇报",
+                                        "hint": "追踪更新任务进度并发送通知"
                                     }
                                 }
                             ]
                         },
                         {
-                            'component': 'VCol',
-                            'props': {'cols': 12, 'md': 4},
-                            'content': [
+                            "component": "VCol",
+                            "props": {"cols": 12, "md": 4},
+                            "content": [
                                 {
-                                    'component': 'VSwitch',
-                                    'props': {
-                                        'model': 'deleteimages',
-                                        'label': '清理镜像',
-                                        'hint': '在下次执行时清理无tag且不在使用中的全部镜像'
+                                    "component": "VSwitch",
+                                    "props": {
+                                        "model": "deleteimages",
+                                        "label": "清理镜像",
+                                        "hint": "在下次执行时清理无tag且不在使用中的全部镜像"
                                     }
                                 }
                             ]
@@ -1348,18 +1348,18 @@ class DockerCopilotHelper(_PluginBase):
                     "component": "VRow",
                     "content": [
                         {
-                            'component': 'VCol',
-                            'props': {'cols': 12},
-                            'content': [
+                            "component": "VCol",
+                            "props": {"cols": 12},
+                            "content": [
                                 {
-                                    'component': 'VSelect',
-                                    'props': {
-                                        'chips': True,
-                                        'multiple': True,
-                                        'model': 'autoupdatelist',
-                                        'label': '自动更新容器',
-                                        'items': auto_update_list,
-                                        'hint': '被选择的容器当有新版本时自动更新'
+                                    "component": "VSelect",
+                                    "props": {
+                                        "chips": True,
+                                        "multiple": True,
+                                        "model": "autoupdatelist",
+                                        "label": "自动更新容器",
+                                        "items": auto_update_list,
+                                        "hint": "被选择的容器当有新版本时自动更新"
                                     }
                                 }
                             ]
@@ -1377,37 +1377,37 @@ class DockerCopilotHelper(_PluginBase):
             Dict: 标签页配置
         """
         return {
-            'component': 'VWindowItem',
-            'props': {'value': 'C3', 'style': {'margin-top': '30px'}},
-            'content': [
+            "component": "VWindowItem",
+            "props": {"value": "C3", "style": {"margin-top": "30px"}},
+            "content": [
                 {
                     "component": "VRow",
                     "content": [
                         {
-                            'component': 'VCol',
-                            'props': {'cols': 12, 'md': 6},
-                            'content': [
+                            "component": "VCol",
+                            "props": {"cols": 12, "md": 6},
+                            "content": [
                                 {
-                                    'component': 'VTextField',
-                                    'props': {
-                                        'model': 'backupcron',
-                                        'label': '自动备份',
-                                        'placeholder': '0 7 * * *',
-                                        'hint': 'Cron表达式'
+                                    "component": "VTextField",
+                                    "props": {
+                                        "model": "backupcron",
+                                        "label": "自动备份",
+                                        "placeholder": "0 7 * * *",
+                                        "hint": "Cron表达式"
                                     }
                                 }
                             ]
                         },
                         {
-                            'component': 'VCol',
-                            'props': {'cols': 12, 'md': 6},
-                            'content': [
+                            "component": "VCol",
+                            "props": {"cols": 12, "md": 6},
+                            "content": [
                                 {
-                                    'component': 'VSwitch',
-                                    'props': {
-                                        'model': 'backupsnotify',
-                                        'label': '备份通知',
-                                        'hint': '备份成功发送通知'
+                                    "component": "VSwitch",
+                                    "props": {
+                                        "model": "backupsnotify",
+                                        "label": "备份通知",
+                                        "hint": "备份成功发送通知"
                                     }
                                 }
                             ]
@@ -1436,24 +1436,27 @@ class DockerCopilotHelper(_PluginBase):
         """
         return [
             {
-                'component': 'VCard',
-                'content': [
+                "component": "VCard",
+                "content": [
                     {
-                        'component': 'VCardText',
-                        'props': {
-                            'class': 'pa-4'
+                        "component": "VCardText",
+                        "props": {
+                            "class": "pa-4"
                         },
-                        'content': [
+                        "content": [
                             # 第一行：运行状态概览
-                            self._build_status_overview_row(docker_list, updatable_containers, enabled_tasks),
+                            self._build_status_overview_row(docker_list, enabled_tasks),
                             
                             # 第二行：定时任务状态
                             self._build_schedule_status_row(update_notify_set, auto_update_set, auto_backup_set),
                             
-                            # 第三行：容器配置
+                            # 第三行：可更新容器状态
+                            self._build_updatable_containers_row(updatable_containers),
+                            
+                            # 第四行：容器配置（合并了容器名称详情）
                             self._build_container_config_row(),
                             
-                            # 第四行：操作统计
+                            # 第五行：操作统计
                             self._build_statistics_row()
                         ]
                     }
@@ -1461,83 +1464,80 @@ class DockerCopilotHelper(_PluginBase):
             }
         ]
 
-    def _build_status_overview_row(self, docker_list: List[Dict], 
-                                   updatable_containers: List[str], 
-                                   enabled_tasks: int) -> Dict:
+    def _build_status_overview_row(self, docker_list: List[Dict], enabled_tasks: int) -> Dict:
         """
         构建状态概览行
         
         Args:
             docker_list: 容器列表
-            updatable_containers: 可更新容器列表
             enabled_tasks: 启用的任务数量
             
         Returns:
             Dict: 状态概览行配置
         """
         return {
-            'component': 'VRow',
-            'props': {
-                'class': 'mb-3'
+            "component": "VRow",
+            "props": {
+                "class": "mb-3"
             },
-            'content': [
+            "content": [
                 # 运行状态卡片
                 {
-                    'component': 'VCol',
-                    'props': {
-                        'cols': 12,
-                        'md': 4
+                    "component": "VCol",
+                    "props": {
+                        "cols": 12,
+                        "md": 6
                     },
-                    'content': [
+                    "content": [
                         {
-                            'component': 'VCard',
-                            'props': {
-                                'variant': 'outlined',
-                                'class': 'h-100'
+                            "component": "VCard",
+                            "props": {
+                                "variant": "outlined",
+                                "class": "h-100"
                             },
-                            'content': [
+                            "content": [
                                 {
-                                    'component': 'VCardTitle',
-                                    'props': {
-                                        'class': 'pa-2'
+                                    "component": "VCardTitle",
+                                    "props": {
+                                        "class": "pa-2"
                                     },
-                                    'text': '运行状态'
+                                    "text": "运行状态"
                                 },
                                 {
-                                    'component': 'VDivider'
+                                    "component": "VDivider"
                                 },
                                 {
-                                    'component': 'VCardText',
-                                    'props': {
-                                        'class': 'pa-2 text-center'
+                                    "component": "VCardText",
+                                    "props": {
+                                        "class": "pa-2 text-center"
                                     },
-                                    'content': [
+                                    "content": [
                                         {
-                                            'component': 'div',
-                                            'props': {
-                                                'class': 'd-flex flex-column align-center'
+                                            "component": "div",
+                                            "props": {
+                                                "class": "d-flex flex-column align-center"
                                             },
-                                            'content': [
+                                            "content": [
                                                 {
-                                                    'component': 'div',
-                                                    'props': {
-                                                        'class': 'text-h4 mb-1'
+                                                    "component": "div",
+                                                    "props": {
+                                                        "class": "text-h4 mb-1"
                                                     },
-                                                    'text': '✅' if self._enabled else '❌'
+                                                    "text": "✅" if self._enabled else "❌"
                                                 },
                                                 {
-                                                    'component': 'div',
-                                                    'props': {
-                                                        'class': 'text-h6'
+                                                    "component": "div",
+                                                    "props": {
+                                                        "class": "text-h6"
                                                     },
-                                                    'text': '已启用' if self._enabled else '未启用'
+                                                    "text": "已启用" if self._enabled else "未启用"
                                                 },
                                                 {
-                                                    'component': 'div',
-                                                    'props': {
-                                                        'class': 'text-caption text-medium-emphasis mt-1'
+                                                    "component": "div",
+                                                    "props": {
+                                                        "class": "text-caption text-medium-emphasis mt-1"
                                                     },
-                                                    'text': f'{enabled_tasks} 个任务' if self._enabled else ''
+                                                    "text": f"{enabled_tasks} 个任务" if self._enabled else ""
                                                 }
                                             ]
                                         }
@@ -1550,62 +1550,62 @@ class DockerCopilotHelper(_PluginBase):
                 
                 # 服务器地址卡片
                 {
-                    'component': 'VCol',
-                    'props': {
-                        'cols': 12,
-                        'md': 4
+                    "component": "VCol",
+                    "props": {
+                        "cols": 12,
+                        "md": 6
                     },
-                    'content': [
+                    "content": [
                         {
-                            'component': 'VCard',
-                            'props': {
-                                'variant': 'outlined',
-                                'class': 'h-100'
+                            "component": "VCard",
+                            "props": {
+                                "variant": "outlined",
+                                "class": "h-100"
                             },
-                            'content': [
+                            "content": [
                                 {
-                                    'component': 'VCardTitle',
-                                    'props': {
-                                        'class': 'pa-2'
+                                    "component": "VCardTitle",
+                                    "props": {
+                                        "class": "pa-2"
                                     },
-                                    'text': '服务器状态'
+                                    "text": "服务器"
                                 },
                                 {
-                                    'component': 'VDivider'
+                                    "component": "VDivider"
                                 },
                                 {
-                                    'component': 'VCardText',
-                                    'props': {
-                                        'class': 'pa-2 text-center'
+                                    "component": "VCardText",
+                                    "props": {
+                                        "class": "pa-2 text-center"
                                     },
-                                    'content': [
+                                    "content": [
                                         {
-                                            'component': 'div',
-                                            'props': {
-                                                'class': 'd-flex flex-column align-center'
+                                            "component": "div",
+                                            "props": {
+                                                "class": "d-flex flex-column align-center"
                                             },
-                                            'content': [
+                                            "content": [
                                                 {
-                                                    'component': 'div',
-                                                    'props': {
-                                                        'class': 'text-h4 mb-1'
+                                                    "component": "div",
+                                                    "props": {
+                                                        "class": "text-h4 mb-1"
                                                     },
-                                                    'text': '🌐'
+                                                    "text": "🌐"
                                                 },
                                                 {
-                                                    'component': 'div',
-                                                    'props': {
-                                                        'class': 'text-h6 text-truncate',
-                                                        'style': 'max-width: 100%'
+                                                    "component": "div",
+                                                    "props": {
+                                                        "class": "text-h6 text-truncate",
+                                                        "style": "max-width: 100%"
                                                     },
-                                                    'text': self._host if self._host else '未设置'
+                                                    "text": self._host if self._host else "未设置"
                                                 },
                                                 {
-                                                    'component': 'div',
-                                                    'props': {
-                                                        'class': 'text-caption text-medium-emphasis mt-1'
+                                                    "component": "div",
+                                                    "props": {
+                                                        "class": "text-caption text-medium-emphasis mt-1"
                                                     },
-                                                    'text': f'{len(docker_list)} 个容器' if docker_list else '未连接'
+                                                    "text": f"{len(docker_list)} 个容器" if docker_list else "未连接"
                                                 }
                                             ]
                                         }
@@ -1614,69 +1614,101 @@ class DockerCopilotHelper(_PluginBase):
                             ]
                         }
                     ]
-                },
-                
-                # 可更新容器卡片
+                }
+            ]
+        }
+
+    def _build_updatable_containers_row(self, updatable_containers: List[str]) -> Dict:
+        """
+        构建可更新容器状态行
+        
+        Args:
+            updatable_containers: 可更新容器列表
+            
+        Returns:
+            Dict: 可更新容器状态行配置
+        """
+        return {
+            "component": "VCard",
+            "props": {
+                "variant": "outlined",
+                "class": "mb-3"
+            },
+            "content": [
                 {
-                    'component': 'VCol',
-                    'props': {
-                        'cols': 12,
-                        'md': 4
+                    "component": "VCardTitle",
+                    "props": {
+                        "class": "pa-3"
                     },
-                    'content': [
+                    "text": "检查更新"
+                },
+                {
+                    "component": "VDivider"
+                },
+                {
+                    "component": "VCardText",
+                    "props": {
+                        "class": "pa-3"
+                    },
+                    "content": [
                         {
-                            'component': 'VCard',
-                            'props': {
-                                'variant': 'outlined',
-                                'class': 'h-100'
+                            "component": "div",
+                            "props": {
+                                "class": "d-flex align-center justify-space-between mb-2"
                             },
-                            'content': [
+                            "content": [
                                 {
-                                    'component': 'VCardTitle',
-                                    'props': {
-                                        'class': 'pa-2'
+                                    "component": "div",
+                                    "props": {
+                                        "class": "d-flex align-center"
                                     },
-                                    'text': '更新状态'
-                                },
-                                {
-                                    'component': 'VDivider'
-                                },
-                                {
-                                    'component': 'VCardText',
-                                    'props': {
-                                        'class': 'pa-2 text-center'
-                                    },
-                                    'content': [
+                                    "content": [
                                         {
-                                            'component': 'div',
-                                            'props': {
-                                                'class': 'd-flex flex-column align-center'
+                                            "component": "div",
+                                            "props": {
+                                                "class": "text-h4 mr-2"
                                             },
-                                            'content': [
-                                                {
-                                                    'component': 'div',
-                                                    'props': {
-                                                        'class': 'text-h4 mb-1'
-                                                    },
-                                                    'text': '🔄' if updatable_containers else '📦'
-                                                },
-                                                {
-                                                    'component': 'div',
-                                                    'props': {
-                                                        'class': 'text-h6'
-                                                    },
-                                                    'text': f'{len(updatable_containers)} 个可更新'
-                                                },
-                                                {
-                                                    'component': 'div',
-                                                    'props': {
-                                                        'class': 'text-caption text-medium-emphasis mt-1'
-                                                    },
-                                                    'text': ', '.join(updatable_containers[:3]) + 
-                                                            ('...' if len(updatable_containers) > 3 else '') 
-                                                            if updatable_containers else '暂无更新'
-                                                }
-                                            ]
+                                            "text": "🔄" if updatable_containers else "📦"
+                                        },
+                                        {
+                                            "component": "div",
+                                            "props": {
+                                                "class": "text-h6"
+                                            },
+                                            "text": f"{len(updatable_containers)} 个可更新容器"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "component": "div",
+                            "props": {
+                                "class": "mt-3"
+                            },
+                            "content": [
+                                {
+                                    "component": "div",
+                                    "props": {
+                                        "class": "text-body-2 mb-1"
+                                    },
+                                    "text": "可更新容器列表:"
+                                },
+                                {
+                                    "component": "div",
+                                    "props": {
+                                        "class": "d-flex flex-wrap gap-1 mt-2"
+                                    },
+                                    "content": [
+                                        self._build_container_chip(container_name, "warning")
+                                        for container_name in updatable_containers
+                                    ] if updatable_containers else [
+                                        {
+                                            "component": "div",
+                                            "props": {
+                                                "class": "text-caption text-medium-emphasis"
+                                            },
+                                            "text": "暂无可用更新"
                                         }
                                     ]
                                 }
@@ -1701,53 +1733,53 @@ class DockerCopilotHelper(_PluginBase):
             Dict: 定时任务状态行配置
         """
         return {
-            'component': 'VCard',
-            'props': {
-                'variant': 'outlined',
-                'class': 'mb-3'
+            "component": "VCard",
+            "props": {
+                "variant": "outlined",
+                "class": "mb-3"
             },
-            'content': [
+            "content": [
                 {
-                    'component': 'VCardTitle',
-                    'props': {
-                        'class': 'pa-3'
+                    "component": "VCardTitle",
+                    "props": {
+                        "class": "pa-3"
                     },
-                    'text': '定时任务配置'
+                    "text": "定时任务"
                 },
                 {
-                    'component': 'VDivider'
+                    "component": "VDivider"
                 },
                 {
-                    'component': 'VCardText',
-                    'props': {
-                        'class': 'pa-3'
+                    "component": "VCardText",
+                    "props": {
+                        "class": "pa-3"
                     },
-                    'content': [
+                    "content": [
                         {
-                            'component': 'VRow',
-                            'content': [
+                            "component": "VRow",
+                            "content": [
                                 # 更新通知定时任务
                                 self._build_schedule_card(
-                                    '更新通知', 
+                                    "更新通知", 
                                     update_notify_set, 
                                     self._update_cron, 
-                                    'info'
+                                    "info"
                                 ),
                                 
                                 # 自动更新定时任务
                                 self._build_schedule_card(
-                                    '自动更新', 
+                                    "自动更新", 
                                     auto_update_set, 
                                     self._auto_update_cron, 
-                                    'warning'
+                                    "warning"
                                 ),
                                 
                                 # 自动备份定时任务
                                 self._build_schedule_card(
-                                    '自动备份', 
+                                    "自动备份", 
                                     auto_backup_set, 
                                     self._backup_cron, 
-                                    'success'
+                                    "success"
                                 )
                             ]
                         }
@@ -1770,46 +1802,46 @@ class DockerCopilotHelper(_PluginBase):
             Dict: 卡片配置
         """
         return {
-            'component': 'VCol',
-            'props': {
-                'cols': 12,
-                'md': 4
+            "component": "VCol",
+            "props": {
+                "cols": 12,
+                "md": 4
             },
-            'content': [
+            "content": [
                 {
-                    'component': 'VCard',
-                    'props': {
-                        'variant': 'tonal',
-                        'color': color if is_set else 'grey',
-                        'class': 'text-center h-100'
+                    "component": "VCard",
+                    "props": {
+                        "variant": "tonal",
+                        "color": color if is_set else "grey",
+                        "class": "text-center h-100"
                     },
-                    'content': [
+                    "content": [
                         {
-                            'component': 'VCardText',
-                            'props': {
-                                'class': 'pa-3'
+                            "component": "VCardText",
+                            "props": {
+                                "class": "pa-3"
                             },
-                            'content': [
+                            "content": [
                                 {
-                                    'component': 'div',
-                                    'props': {
-                                        'class': 'text-h6 mb-2'
+                                    "component": "div",
+                                    "props": {
+                                        "class": "text-h6 mb-2"
                                     },
-                                    'text': title
+                                    "text": title
                                 },
                                 {
-                                    'component': 'div',
-                                    'props': {
-                                        'class': 'text-h5 mb-1'
+                                    "component": "div",
+                                    "props": {
+                                        "class": "text-h5 mb-1"
                                     },
-                                    'text': '✅' if is_set else '❌'
+                                    "text": "✅" if is_set else "❌"
                                 },
                                 {
-                                    'component': 'div',
-                                    'props': {
-                                        'class': 'text-caption text-medium-emphasis'
+                                    "component": "div",
+                                    "props": {
+                                        "class": "text-caption text-medium-emphasis"
                                     },
-                                    'text': cron if cron else '未配置'
+                                    "text": cron if cron else "未配置"
                                 }
                             ]
                         }
@@ -1820,70 +1852,110 @@ class DockerCopilotHelper(_PluginBase):
 
     def _build_container_config_row(self) -> Dict:
         """
-        构建容器配置行
+        构建容器配置行（合并了容器名称详情）
         
         Returns:
             Dict: 容器配置行配置
         """
         return {
-            'component': 'VRow',
-            'props': {
-                'class': 'mb-4'
+            "component": "VRow",
+            "props": {
+                "class": "mb-3"
             },
-            'content': [
+            "content": [
                 # 更新通知容器卡片
                 {
-                    'component': 'VCol',
-                    'props': {
-                        'cols': 12,
-                        'md': 6
+                    "component": "VCol",
+                    "props": {
+                        "cols": 12,
+                        "md": 6
                     },
-                    'content': [
+                    "content": [
                         {
-                            'component': 'VCard',
-                            'props': {
-                                'variant': 'outlined',
-                                'class': 'h-100'
+                            "component": "VCard",
+                            "props": {
+                                "variant": "outlined",
+                                "class": "h-100"
                             },
-                            'content': [
+                            "content": [
                                 {
-                                    'component': 'VCardTitle',
-                                    'props': {
-                                        'class': 'pa-3'
+                                    "component": "VCardTitle",
+                                    "props": {
+                                        "class": "pa-3"
                                     },
-                                    'text': '更新通知容器'
+                                    "text": "更新通知"
                                 },
                                 {
-                                    'component': 'VDivider'
+                                    "component": "VDivider"
                                 },
                                 {
-                                    'component': 'VCardText',
-                                    'props': {
-                                        'class': 'pa-3'
+                                    "component": "VCardText",
+                                    "props": {
+                                        "class": "pa-3"
                                     },
-                                    'content': [
+                                    "content": [
                                         {
-                                            'component': 'div',
-                                            'props': {
-                                                'class': 'd-flex align-center mb-2'
+                                            "component": "div",
+                                            "props": {
+                                                "class": "d-flex align-center justify-space-between mb-3"
                                             },
-                                            'content': [
+                                            "content": [
                                                 {
-                                                    'component': 'div',
-                                                    'props': {
-                                                        'class': 'text-h6'
+                                                    "component": "div",
+                                                    "props": {
+                                                        "class": "d-flex align-center"
                                                     },
-                                                    'text': f'🔔 {len(self._updatable_list)} 个容器'
+                                                    "content": [
+                                                        {
+                                                            "component": "div",
+                                                            "props": {
+                                                                "class": "text-h4 mr-2"
+                                                            },
+                                                            "text": "🔔"
+                                                        },
+                                                        {
+                                                            "component": "div",
+                                                            "props": {
+                                                                "class": "text-h6"
+                                                            },
+                                                            "text": f"{len(self._updatable_list)} 个容器"
+                                                        }
+                                                    ]
                                                 }
                                             ]
                                         },
                                         {
-                                            'component': 'div',
-                                            'props': {
-                                                'class': 'text-body-2 text-medium-emphasis'
+                                            "component": "div",
+                                            "props": {
+                                                "class": "text-body-2 mb-2"
                                             },
-                                            'text': ', '.join(self._updatable_list) 
-                                                    if self._updatable_list else '未选择任何容器'
+                                            "text": "以下容器在有更新时会收到通知："
+                                        },
+                                        {
+                                            "component": "div",
+                                            "props": {
+                                                "class": "mt-2"
+                                            },
+                                            "content": [
+                                                {
+                                                    "component": "div",
+                                                    "props": {
+                                                        "class": "d-flex flex-wrap gap-1"
+                                                    },
+                                                    "content": [
+                                                        self._build_container_chip(container_name, "primary")
+                                                        for container_name in self._updatable_list
+                                                    ] if self._updatable_list else [
+                                                        {
+                                                            "component": "div",
+                                                            "props": {
+                                                                "class": "text-caption text-medium-emphasis"
+                                                            },
+                                                            "text": "未选择任何容器"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
                                         }
                                     ]
                                 }
@@ -1894,57 +1966,97 @@ class DockerCopilotHelper(_PluginBase):
                 
                 # 自动更新容器卡片
                 {
-                    'component': 'VCol',
-                    'props': {
-                        'cols': 12,
-                        'md': 6
+                    "component": "VCol",
+                    "props": {
+                        "cols": 12,
+                        "md": 6
                     },
-                    'content': [
+                    "content": [
                         {
-                            'component': 'VCard',
-                            'props': {
-                                'variant': 'outlined',
-                                'class': 'h-100'
+                            "component": "VCard",
+                            "props": {
+                                "variant": "outlined",
+                                "class": "h-100"
                             },
-                            'content': [
+                            "content": [
                                 {
-                                    'component': 'VCardTitle',
-                                    'props': {
-                                        'class': 'pa-3'
+                                    "component": "VCardTitle",
+                                    "props": {
+                                        "class": "pa-3"
                                     },
-                                    'text': '自动更新容器'
+                                    "text": "自动更新"
                                 },
                                 {
-                                    'component': 'VDivider'
+                                    "component": "VDivider"
                                 },
                                 {
-                                    'component': 'VCardText',
-                                    'props': {
-                                        'class': 'pa-3'
+                                    "component": "VCardText",
+                                    "props": {
+                                        "class": "pa-3"
                                     },
-                                    'content': [
+                                    "content": [
                                         {
-                                            'component': 'div',
-                                            'props': {
-                                                'class': 'd-flex align-center mb-2'
+                                            "component": "div",
+                                            "props": {
+                                                "class": "d-flex align-center justify-space-between mb-3"
                                             },
-                                            'content': [
+                                            "content": [
                                                 {
-                                                    'component': 'div',
-                                                    'props': {
-                                                        'class': 'text-h6'
+                                                    "component": "div",
+                                                    "props": {
+                                                        "class": "d-flex align-center"
                                                     },
-                                                    'text': f'🔄 {len(self._auto_update_list)} 个容器'
+                                                    "content": [
+                                                        {
+                                                            "component": "div",
+                                                            "props": {
+                                                                "class": "text-h4 mr-2"
+                                                            },
+                                                            "text": "🔄"
+                                                        },
+                                                        {
+                                                            "component": "div",
+                                                            "props": {
+                                                                "class": "text-h6"
+                                                            },
+                                                            "text": f"{len(self._auto_update_list)} 个容器"
+                                                        }
+                                                    ]
                                                 }
                                             ]
                                         },
                                         {
-                                            'component': 'div',
-                                            'props': {
-                                                'class': 'text-body-2 text-medium-emphasis'
+                                            "component": "div",
+                                            "props": {
+                                                "class": "text-body-2 mb-2"
                                             },
-                                            'text': ', '.join(self._auto_update_list) 
-                                                    if self._auto_update_list else '未选择任何容器'
+                                            "text": "以下容器在有更新时会自动更新："
+                                        },
+                                        {
+                                            "component": "div",
+                                            "props": {
+                                                "class": "mt-2"
+                                            },
+                                            "content": [
+                                                {
+                                                    "component": "div",
+                                                    "props": {
+                                                        "class": "d-flex flex-wrap gap-1"
+                                                    },
+                                                    "content": [
+                                                        self._build_container_chip(container_name, "success")
+                                                        for container_name in self._auto_update_list
+                                                    ] if self._auto_update_list else [
+                                                        {
+                                                            "component": "div",
+                                                            "props": {
+                                                                "class": "text-caption text-medium-emphasis"
+                                                            },
+                                                            "text": "未选择任何容器"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
                                         }
                                     ]
                                 }
@@ -1955,6 +2067,27 @@ class DockerCopilotHelper(_PluginBase):
             ]
         }
 
+    def _build_container_chip(self, container_name: str, color: str) -> Dict:
+        """
+        构建容器标签（Chip）
+        
+        Args:
+            container_name: 容器名称
+            color: 标签颜色
+            
+        Returns:
+            Dict: 容器标签配置
+        """
+        return {
+            "component": "VChip",
+            "props": {
+                "color": color,
+                "size": "small",
+                "class": "ma-1"
+            },
+            "text": container_name
+        }
+
     def _build_statistics_row(self) -> Dict:
         """
         构建统计信息行
@@ -1963,56 +2096,56 @@ class DockerCopilotHelper(_PluginBase):
             Dict: 统计信息行配置
         """
         return {
-            'component': 'VCard',
-            'props': {
-                'variant': 'outlined'
+            "component": "VCard",
+            "props": {
+                "variant": "outlined"
             },
-            'content': [
+            "content": [
                 {
-                    'component': 'VCardTitle',
-                    'props': {
-                        'class': 'pa-3'
+                    "component": "VCardTitle",
+                    "props": {
+                        "class": "pa-3"
                     },
-                    'text': '操作统计'
+                    "text": "操作统计"
                 },
                 {
-                    'component': 'VDivider'
+                    "component": "VDivider"
                 },
                 {
-                    'component': 'VCardText',
-                    'props': {
-                        'class': 'pa-3'
+                    "component": "VCardText",
+                    "props": {
+                        "class": "pa-3"
                     },
-                    'content': [
+                    "content": [
                         {
-                            'component': 'VRow',
-                            'content': [
+                            "component": "VRow",
+                            "content": [
                                 # 更新成功
                                 self._build_stat_card(
-                                    '更新成功', 
+                                    "更新成功", 
                                     self._update_success_count, 
-                                    'success'
+                                    "success"
                                 ),
                                 
                                 # 更新失败
                                 self._build_stat_card(
-                                    '更新失败', 
+                                    "更新失败", 
                                     self._update_fail_count, 
-                                    'error'
+                                    "error"
                                 ),
                                 
                                 # 备份成功
                                 self._build_stat_card(
-                                    '备份成功', 
+                                    "备份成功", 
                                     self._backup_success_count, 
-                                    'success'
+                                    "success"
                                 ),
                                 
                                 # 清理成功
                                 self._build_stat_card(
-                                    '清理成功', 
+                                    "清理成功", 
                                     self._cleanup_success_count, 
-                                    'success'
+                                    "success"
                                 )
                             ]
                         }
@@ -2034,33 +2167,33 @@ class DockerCopilotHelper(_PluginBase):
             Dict: 卡片配置
         """
         return {
-            'component': 'VCol',
-            'props': {
-                'cols': 6,
-                'sm': 3
+            "component": "VCol",
+            "props": {
+                "cols": 6,
+                "sm": 3
             },
-            'content': [
+            "content": [
                 {
-                    'component': 'VCard',
-                    'props': {
-                        'variant': 'tonal',
-                        'color': color,
-                        'class': 'text-center pa-2'
+                    "component": "VCard",
+                    "props": {
+                        "variant": "tonal",
+                        "color": color,
+                        "class": "text-center pa-2"
                     },
-                    'content': [
+                    "content": [
                         {
-                            'component': 'div',
-                            'props': {
-                                'class': 'text-h5'
+                            "component": "div",
+                            "props": {
+                                "class": "text-h5"
                             },
-                            'text': f'{value}'
+                            "text": f"{value}"
                         },
                         {
-                            'component': 'div',
-                            'props': {
-                                'class': 'text-caption'
+                            "component": "div",
+                            "props": {
+                                "class": "text-caption"
                             },
-                            'text': title
+                            "text": title
                         }
                     ]
                 }
