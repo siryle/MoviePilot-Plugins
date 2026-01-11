@@ -480,10 +480,10 @@ class DockerCopilotHelper(_PluginBase):
         self._update_cron = config.get("updatecron")
         self._updatable_list = config.get("updatablelist", [])
         self._updatable_notify = config.get("updatablenotify", False)
+        self._schedule_report = config.get("schedulereport", False)
         self._auto_update_cron = config.get("autoupdatecron")
         self._auto_update_list = config.get("autoupdatelist", [])
         self._auto_update_notify = config.get("autoupdatenotify", False)
-        self._schedule_report = config.get("schedulereport", False)
         self._delete_images = config.get("deleteimages", False)
         self._backup_cron = config.get("backupcron")
         self._backups_notify = config.get("backupsnotify", False)
@@ -1417,56 +1417,9 @@ class DockerCopilotHelper(_PluginBase):
             ]
         }
 
-    def _build_detail_page(self, docker_list: List[Dict], updatable_containers: List[str],
-                          update_notify_set: bool, auto_update_set: bool, 
-                          auto_backup_set: bool, enabled_tasks: int) -> List[dict]:
-        """
-        构建详情页面
-        
-        Args:
-            docker_list: 容器列表
-            updatable_containers: 可更新容器列表
-            update_notify_set: 更新通知是否配置
-            auto_update_set: 自动更新是否配置
-            auto_backup_set: 自动备份是否配置
-            enabled_tasks: 启用的任务数量
-            
-        Returns:
-            List[dict]: 详情页面配置
-        """
-        return [
-            {
-                "component": "VCard",
-                "content": [
-                    {
-                        "component": "VCardText",
-                        "props": {
-                            "class": "pa-4"
-                        },
-                        "content": [
-                            # 第一行：运行状态概览
-                            self._build_status_overview_row(docker_list, enabled_tasks),
-                            
-                            # 第二行：定时任务状态
-                            self._build_schedule_status_row(update_notify_set, auto_update_set, auto_backup_set),
-                            
-                            # 第三行：可更新容器状态
-                            self._build_updatable_containers_row(updatable_containers),
-                            
-                            # 第四行：容器配置（合并了容器名称详情）
-                            self._build_container_config_row(),
-                            
-                            # 第五行：操作统计
-                            self._build_statistics_row()
-                        ]
-                    }
-                ]
-            }
-        ]
-
     def _build_status_overview_row(self, docker_list: List[Dict], enabled_tasks: int) -> Dict:
         """
-        构建状态概览行
+        构建状态概览行（调整布局，运行状态:定时任务:服务器 = 1:3:1）
         
         Args:
             docker_list: 容器列表
@@ -1481,12 +1434,12 @@ class DockerCopilotHelper(_PluginBase):
                 "class": "mb-3"
             },
             "content": [
-                # 运行状态卡片
+                # 运行状态卡片（宽度比例1）
                 {
                     "component": "VCol",
                     "props": {
                         "cols": 12,
-                        "md": 6
+                        "md": 2
                     },
                     "content": [
                         {
@@ -1499,7 +1452,7 @@ class DockerCopilotHelper(_PluginBase):
                                 {
                                     "component": "VCardTitle",
                                     "props": {
-                                        "class": "pa-2"
+                                        "class": "pa-2 text-center"
                                     },
                                     "text": "运行状态"
                                 },
@@ -1548,7 +1501,7 @@ class DockerCopilotHelper(_PluginBase):
                     ]
                 },
                 
-                # 服务器地址卡片
+                # 定时任务栏（宽度比例3）
                 {
                     "component": "VCol",
                     "props": {
@@ -1566,7 +1519,73 @@ class DockerCopilotHelper(_PluginBase):
                                 {
                                     "component": "VCardTitle",
                                     "props": {
+                                        "class": "pa-2 text-center"
+                                    },
+                                    "text": "定时任务"
+                                },
+                                {
+                                    "component": "VDivider"
+                                },
+                                {
+                                    "component": "VCardText",
+                                    "props": {
                                         "class": "pa-2"
+                                    },
+                                    "content": [
+                                        {
+                                            "component": "VRow",
+                                            "content": [
+                                                # 更新通知定时任务
+                                                self._build_schedule_card_mini(
+                                                    "更新通知", 
+                                                    bool(self._update_cron and self._updatable_list), 
+                                                    self._update_cron, 
+                                                    "info"
+                                                ),
+                                                
+                                                # 自动更新定时任务
+                                                self._build_schedule_card_mini(
+                                                    "自动更新", 
+                                                    bool(self._auto_update_cron and self._auto_update_list), 
+                                                    self._auto_update_cron, 
+                                                    "warning"
+                                                ),
+                                                
+                                                # 自动备份定时任务
+                                                self._build_schedule_card_mini(
+                                                    "自动备份", 
+                                                    bool(self._backup_cron), 
+                                                    self._backup_cron, 
+                                                    "success"
+                                                )
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                
+                # 服务器地址卡片（宽度比例1）
+                {
+                    "component": "VCol",
+                    "props": {
+                        "cols": 12,
+                        "md": 4
+                    },
+                    "content": [
+                        {
+                            "component": "VCard",
+                            "props": {
+                                "variant": "outlined",
+                                "class": "h-100"
+                            },
+                            "content": [
+                                {
+                                    "component": "VCardTitle",
+                                    "props": {
+                                        "class": "pa-2 text-center"
                                     },
                                     "text": "服务器"
                                 },
@@ -1610,6 +1629,69 @@ class DockerCopilotHelper(_PluginBase):
                                             ]
                                         }
                                     ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+    def _build_schedule_card_mini(self, title: str, is_set: bool, cron: str, color: str) -> Dict:
+        """
+        构建紧凑版定时任务卡片（用于状态概览行）
+        
+        Args:
+            title: 卡片标题
+            is_set: 是否已配置
+            cron: cron表达式
+            color: 卡片颜色
+            
+        Returns:
+            Dict: 卡片配置
+        """
+        return {
+            "component": "VCol",
+            "props": {
+                "cols": 12,
+                "md": 4
+            },
+            "content": [
+                {
+                    "component": "VCard",
+                    "props": {
+                        "variant": "tonal",
+                        "color": color if is_set else "grey",
+                        "class": "text-center h-100 pa-1"
+                    },
+                    "content": [
+                        {
+                            "component": "VCardText",
+                            "props": {
+                                "class": "pa-1"
+                            },
+                            "content": [
+                                {
+                                    "component": "div",
+                                    "props": {
+                                        "class": "text-subtitle-2 mb-1"
+                                    },
+                                    "text": title
+                                },
+                                {
+                                    "component": "div",
+                                    "props": {
+                                        "class": "text-h6 mb-1"
+                                    },
+                                    "text": "✅" if is_set else "❌"
+                                },
+                                {
+                                    "component": "div",
+                                    "props": {
+                                        "class": "text-caption text-medium-emphasis text-truncate",
+                                        "style": "max-width: 100%"
+                                    },
+                                    "text": cron if cron else "未配置"
                                 }
                             ]
                         }
@@ -1711,137 +1793,6 @@ class DockerCopilotHelper(_PluginBase):
                                             "text": "暂无可用更新"
                                         }
                                     ]
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }
-
-    def _build_schedule_status_row(self, update_notify_set: bool, 
-                                   auto_update_set: bool, auto_backup_set: bool) -> Dict:
-        """
-        构建定时任务状态行
-        
-        Args:
-            update_notify_set: 更新通知是否配置
-            auto_update_set: 自动更新是否配置
-            auto_backup_set: 自动备份是否配置
-            
-        Returns:
-            Dict: 定时任务状态行配置
-        """
-        return {
-            "component": "VCard",
-            "props": {
-                "variant": "outlined",
-                "class": "mb-3"
-            },
-            "content": [
-                {
-                    "component": "VCardTitle",
-                    "props": {
-                        "class": "pa-3"
-                    },
-                    "text": "定时任务"
-                },
-                {
-                    "component": "VDivider"
-                },
-                {
-                    "component": "VCardText",
-                    "props": {
-                        "class": "pa-3"
-                    },
-                    "content": [
-                        {
-                            "component": "VRow",
-                            "content": [
-                                # 更新通知定时任务
-                                self._build_schedule_card(
-                                    "更新通知", 
-                                    update_notify_set, 
-                                    self._update_cron, 
-                                    "info"
-                                ),
-                                
-                                # 自动更新定时任务
-                                self._build_schedule_card(
-                                    "自动更新", 
-                                    auto_update_set, 
-                                    self._auto_update_cron, 
-                                    "warning"
-                                ),
-                                
-                                # 自动备份定时任务
-                                self._build_schedule_card(
-                                    "自动备份", 
-                                    auto_backup_set, 
-                                    self._backup_cron, 
-                                    "success"
-                                )
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }
-
-    def _build_schedule_card(self, title: str, is_set: bool, cron: str, color: str) -> Dict:
-        """
-        构建单个定时任务卡片
-        
-        Args:
-            title: 卡片标题
-            is_set: 是否已配置
-            cron: cron表达式
-            color: 卡片颜色
-            
-        Returns:
-            Dict: 卡片配置
-        """
-        return {
-            "component": "VCol",
-            "props": {
-                "cols": 12,
-                "md": 4
-            },
-            "content": [
-                {
-                    "component": "VCard",
-                    "props": {
-                        "variant": "tonal",
-                        "color": color if is_set else "grey",
-                        "class": "text-center h-100"
-                    },
-                    "content": [
-                        {
-                            "component": "VCardText",
-                            "props": {
-                                "class": "pa-3"
-                            },
-                            "content": [
-                                {
-                                    "component": "div",
-                                    "props": {
-                                        "class": "text-h6 mb-2"
-                                    },
-                                    "text": title
-                                },
-                                {
-                                    "component": "div",
-                                    "props": {
-                                        "class": "text-h5 mb-1"
-                                    },
-                                    "text": "✅" if is_set else "❌"
-                                },
-                                {
-                                    "component": "div",
-                                    "props": {
-                                        "class": "text-caption text-medium-emphasis"
-                                    },
-                                    "text": cron if cron else "未配置"
                                 }
                             ]
                         }
@@ -2199,3 +2150,47 @@ class DockerCopilotHelper(_PluginBase):
                 }
             ]
         }
+
+    def _build_detail_page(self, docker_list: List[Dict], updatable_containers: List[str],
+                          update_notify_set: bool, auto_update_set: bool, 
+                          auto_backup_set: bool, enabled_tasks: int) -> List[dict]:
+        """
+        构建详情页面（调整布局结构）
+        
+        Args:
+            docker_list: 容器列表
+            updatable_containers: 可更新容器列表
+            update_notify_set: 更新通知是否配置
+            auto_update_set: 自动更新是否配置
+            auto_backup_set: 自动备份是否配置
+            enabled_tasks: 启用的任务数量
+            
+        Returns:
+            List[dict]: 详情页面配置
+        """
+        return [
+            {
+                "component": "VCard",
+                "content": [
+                    {
+                        "component": "VCardText",
+                        "props": {
+                            "class": "pa-4"
+                        },
+                        "content": [
+                            # 第一行：运行状态、定时任务、服务器（1:3:1比例）
+                            self._build_status_overview_row(docker_list, enabled_tasks),
+                            
+                            # 第二行：可更新容器状态（原检查更新行）
+                            self._build_updatable_containers_row(updatable_containers),
+                            
+                            # 第三行：容器配置（合并了容器名称详情）
+                            self._build_container_config_row(),
+                            
+                            # 第四行：操作统计
+                            self._build_statistics_row()
+                        ]
+                    }
+                ]
+            }
+        ]
