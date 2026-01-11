@@ -1750,7 +1750,7 @@ class DockerCopilotHelper(_PluginBase):
                                             "props": {
                                                 "class": "text-h4 mr-2"
                                             },
-                                            "text": "🆕" if updatable_containers else "📦"
+                                            "text": "⬆️" if updatable_containers else "📦"
                                         },
                                         {
                                             "component": "div",
