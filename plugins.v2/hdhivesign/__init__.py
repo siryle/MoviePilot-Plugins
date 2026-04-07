@@ -4,8 +4,8 @@
 作者: madrays
 功能:
 - 自动完成影巢(HDHive)每日签到
-- 支持多账户、失败重试、历史记录
-- 增加“删除历史记录”配置选项
+- 支持多账户、失败重试、历史记录展示
+- 增加“删除历史记录”功能，修复详情页显示及基类报错
 """
 import time
 import re
@@ -36,7 +36,7 @@ except ImportError:
 
 class HdhiveSign(_PluginBase):
     plugin_name = "影巢签到AI版"
-    plugin_desc = "自动完成影巢(HDHive)每日签到，支持多账户、失败重试和历史记录"
+    plugin_desc = "自动完成影巢(HDHive)每日签到，支持多账户、失败重试、历史展示及数据清理"
     plugin_icon = "https://raw.githubusercontent.com/madrays/MoviePilot-Plugins/main/icons/hdhive.ico"
     plugin_version = "1.4.3"
     plugin_author = "madrays"
@@ -45,6 +45,7 @@ class HdhiveSign(_PluginBase):
     plugin_order = 1
     auth_level = 2
 
+    # 配置变量
     _enabled = False
     _notify = False
     _onlyonce = False
@@ -53,15 +54,9 @@ class HdhiveSign(_PluginBase):
     _max_retries = 3  
     _retry_interval = 30  
     _history_days = 30  
-    _manual_trigger = False
     _accounts = []
     _scheduler: Optional[BackgroundScheduler] = None
-    _current_trigger_type = None  
-
     _base_url = "https://hdhive.com"
-    _site_url = None  
-    _signin_api = None  
-    _user_info_api = None  
 
     def init_plugin(self, config: dict = None):
         self.stop_service()
@@ -73,10 +68,7 @@ class HdhiveSign(_PluginBase):
                 self._onlyonce = config.get("onlyonce")
                 self._clear_history = config.get("clear_history")
                 
-                self._base_url = (config.get("base_url") or self._base_url or "").rstrip("/") or "https://hdhive.com"
-                self._site_url = f"{self._base_url}/"
-                self._signin_api = f"{self._base_url}/api/customer/user/checkin"
-                self._user_info_api = f"{self._base_url}/api/customer/user/info"
+                self._base_url = (config.get("base_url") or "https://hdhive.com").rstrip("/")
                 self._max_retries = int(config.get("max_retries", 3))
                 self._retry_interval = int(config.get("retry_interval", 30))
                 self._history_days = int(config.get("history_days", 30))
@@ -84,28 +76,24 @@ class HdhiveSign(_PluginBase):
                 accounts_str = config.get("accounts", "")
                 if accounts_str:
                     try:
-                        self._accounts = json.loads(accounts_str) if isinstance(json.loads(accounts_str), list) else []
+                        self._accounts = json.loads(accounts_str)
                     except Exception:
                         self._accounts = []
 
-                # --- 实现删除历史记录功能 ---
+                # 执行数据清理
                 if self._clear_history:
-                    logger.info("影巢签到：开始清理插件历史数据...")
-                    max_idx = max(len(self._accounts), 10)
-                    for i in range(max_idx + 5):
+                    logger.info("【影巢签到】执行数据清理任务...")
+                    for i in range(max(len(self._accounts), 20)):
                         self.save_data(f'sign_history_{i}', [])
                         self.save_data(f'consecutive_days_{i}', 0)
                         self.save_data(f'last_success_date_{i}', "")
-                        self.save_data(f'hdhive_user_info_{i}', {})
                     
-                    # 清理完成后重置开关
                     config["clear_history"] = False
                     self.update_config(config)
-                    logger.info("影巢签到：历史记录清理完成")
+                    logger.info("【影巢签到】历史数据已重置")
 
             if self._onlyonce:
                 self._scheduler = BackgroundScheduler(timezone=settings.TZ)
-                self._manual_trigger = True
                 self._scheduler.add_job(func=self.sign_all, trigger='date', 
                                         run_date=datetime.now(tz=pytz.timezone(settings.TZ)) + timedelta(seconds=3))
                 config["onlyonce"] = False
@@ -116,9 +104,6 @@ class HdhiveSign(_PluginBase):
             logger.error(f"hdhivesign初始化错误: {str(e)}")
 
     def get_api(self):
-        """
-        修复错误的核心：实现基类要求的抽象方法
-        """
         return None
 
     def get_form(self) -> Tuple[List[dict], Dict[str, Any]]:
@@ -132,28 +117,18 @@ class HdhiveSign(_PluginBase):
                             {'component': 'VCol', 'props': {'cols': 12, 'md': 3}, 'content': [{'component': 'VSwitch', 'props': {'model': 'enabled', 'label': '启用插件'}}]},
                             {'component': 'VCol', 'props': {'cols': 12, 'md': 3}, 'content': [{'component': 'VSwitch', 'props': {'model': 'notify', 'label': '开启通知'}}]},
                             {'component': 'VCol', 'props': {'cols': 12, 'md': 3}, 'content': [{'component': 'VSwitch', 'props': {'model': 'onlyonce', 'label': '立即运行一次'}}]},
-                            {'component': 'VCol', 'props': {'cols': 12, 'md': 3}, 'content': [{'component': 'VSwitch', 'props': {'model': 'clear_history', 'label': '清除历史记录', 'color': 'error'}}]}
+                            {'component': 'VCol', 'props': {'cols': 12, 'md': 3}, 'content': [{'component': 'VSwitch', 'props': {'model': 'clear_history', 'label': '清除历史数据', 'color': 'error'}}]}
                         ]
                     },
-                    {
-                        'component': 'VRow',
-                        'content': [
-                            {'component': 'VCol', 'props': {'cols': 12}, 'content': [{'component': 'VTextarea', 'props': {'model': 'accounts', 'label': '账户配置（JSON格式）', 'rows': 5}}]}
-                        ]
-                    },
-                    {
-                        'component': 'VRow',
-                        'content': [
-                            {'component': 'VCol', 'props': {'cols': 12}, 'content': [{'component': 'VTextField', 'props': {'model': 'base_url', 'label': '站点地址'}}]}
-                        ]
-                    },
+                    {'component': 'VRow', 'content': [{'component': 'VCol', 'props': {'cols': 12}, 'content': [{'component': 'VTextarea', 'props': {'model': 'accounts', 'label': '账户JSON配置', 'rows': 4}}]}]},
+                    {'component': 'VRow', 'content': [{'component': 'VCol', 'props': {'cols': 12}, 'content': [{'component': 'VTextField', 'props': {'model': 'base_url', 'label': '站点地址'}}]}]},
                     {
                         'component': 'VRow',
                         'content': [
                             {'component': 'VCol', 'props': {'cols': 12, 'md': 3}, 'content': [{'component': 'VCronField', 'props': {'model': 'cron', 'label': '签到周期'}}]},
-                            {'component': 'VCol', 'props': {'cols': 12, 'md': 3}, 'content': [{'component': 'VTextField', 'props': {'model': 'max_retries', 'label': '最大重试次数', 'type': 'number'}}]},
-                            {'component': 'VCol', 'props': {'cols': 12, 'md': 3}, 'content': [{'component': 'VTextField', 'props': {'model': 'retry_interval', 'label': '重试间隔(秒)', 'type': 'number'}}]},
-                            {'component': 'VCol', 'props': {'cols': 12, 'md': 3}, 'content': [{'component': 'VTextField', 'props': {'model': 'history_days', 'label': '历史保留天数', 'type': 'number'}}]}
+                            {'component': 'VCol', 'props': {'cols': 12, 'md': 3}, 'content': [{'component': 'VTextField', 'props': {'model': 'max_retries', 'label': '重试次数', 'type': 'number'}}]},
+                            {'component': 'VCol', 'props': {'cols': 12, 'md': 3}, 'content': [{'component': 'VTextField', 'props': {'model': 'retry_interval', 'label': '重试间隔', 'type': 'number'}}]},
+                            {'component': 'VCol', 'props': {'cols': 12, 'md': 3}, 'content': [{'component': 'VTextField', 'props': {'model': 'history_days', 'label': '保留天数', 'type': 'number'}}]}
                         ]
                     }
                 ]
@@ -164,15 +139,44 @@ class HdhiveSign(_PluginBase):
             "max_retries": 3, "retry_interval": 30, "history_days": 30,
         }
 
+    def get_page(self) -> List[dict]:
+        """渲染详情页面，展示签到历史"""
+        pages = []
+        if not self._accounts:
+            return [{'component': 'VAlert', 'props': {'type': 'info', 'text': '请先在配置中添加账户'}}]
+        
+        for i, account in enumerate(self._accounts):
+            account_name = account.get("name") or f"账户{i+1}"
+            history = self.get_data(f'sign_history_{i}') or []
+            days = self.get_data(f'consecutive_days_{i}', 0)
+            
+            pages.append({
+                'component': 'VCard',
+                'props': {'title': f'{account_name} (连续签到: {days}天)', 'variant': 'outlined', 'class': 'mb-4'},
+                'content': [
+                    {
+                        'component': 'VDataTable',
+                        'props': {
+                            'headers': [
+                                {'title': '时间', 'key': 'date'},
+                                {'title': '状态', 'key': 'status'},
+                                {'title': '详情', 'key': 'message'}
+                            ],
+                            'items': history[::-1], # 倒序显示最新记录
+                            'density': 'compact'
+                        }
+                    }
+                ]
+            })
+        return pages
+
     def sign_all(self):
         if not self._accounts: return
-        enabled_accounts = [acc for acc in self._accounts if acc.get("enabled", True)]
-        for i, account in enumerate(enabled_accounts):
+        for i, account in enumerate([a for a in self._accounts if a.get("enabled", True)]):
             self.sign_account(account, i)
-            if i < len(enabled_accounts) - 1: time.sleep(2)
+            time.sleep(2)
 
-
-    def sign_account(self, account: Dict[str, Any], account_index: int = 0, retry_count: int = 0):
+    def sign_account(self, account, index):
         start_time = datetime.now()
         sign_timeout = 300
         account_name = account.get("name") or f"账户{account_index+1}"
@@ -263,20 +267,17 @@ class HdhiveSign(_PluginBase):
         # 原有汇总通知逻辑...
         pass
 
-    def get_state(self) -> bool: return self._enabled
+    def stop_service(self):
+        if self._scheduler:
+            self._scheduler.remove_all_jobs()
+            if self._scheduler.running: self._scheduler.shutdown()
+            self._scheduler = None
+
+    def get_state(self) -> bool:
+        return self._enabled
 
     def get_service(self) -> List[Dict[str, Any]]:
         if self._enabled and self._cron:
             return [{"id": "hdhivesign", "name": "影巢签到", "trigger": CronTrigger.from_crontab(self._cron), "func": self.sign_all}]
         return []
 
-    def stop_service(self):
-        if self._scheduler:
-            try:
-                self._scheduler.remove_all_jobs()
-                if self._scheduler.running: self._scheduler.shutdown()
-            except Exception: pass
-            self._scheduler = None
-
-    def get_page(self) -> List[dict]:
-        return []
