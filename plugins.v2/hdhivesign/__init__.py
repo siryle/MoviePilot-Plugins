@@ -1,6 +1,6 @@
 """
 影巢签到插件
-版本: 1.5.0
+版本: 1.4.1
 作者: madrays
 功能:
 - 自动完成影巢(HDHive)每日签到
@@ -10,10 +10,8 @@
 - 提供详细的签到通知
 - 默认使用代理访问
 - 仅支持Cookie登录方式
-- 支持删除签到历史记录
 
 修改记录:
-- v1.5.0: 添加删除历史记录按钮，支持在插件页面清除指定账户的签到历史
 - v1.4.1: 去除账号密码登录方式，仅保留Cookie登录，简化配置
 - v1.4.0: 添加多账户支持，每个账户独立配置和记录
 - v1.3.0: 域名改为可配置，统一API拼接(Referer/Origin/接口)，精简日志
@@ -32,7 +30,6 @@ import jwt
 import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
-from fastapi import Request
 
 from app.core.config import settings
 from app.plugins import _PluginBase
@@ -55,11 +52,11 @@ class HdhiveSign(_PluginBase):
     # 插件名称
     plugin_name = "影巢签到AI版"
     # 插件描述
-    plugin_desc = "自动完成影巢(HDHive)每日签到，支持多账户、失败重试、历史记录和删除"
+    plugin_desc = "自动完成影巢(HDHive)每日签到，支持多账户、失败重试和历史记录"
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/madrays/MoviePilot-Plugins/main/icons/hdhive.ico"
     # 插件版本
-    plugin_version = "1.5.0"
+    plugin_version = "1.4.1"
     # 插件作者
     plugin_author = "madrays"
     # 作者主页
@@ -1408,29 +1405,14 @@ class HdhiveSign(_PluginBase):
                         ]
                     })
                 
-                # 添加删除按钮的卡片标题
-                history_card = {
+                history_table = [{
                     'component': 'VCard',
                     'props': {'variant': 'outlined', 'class': 'mb-4'},
                     'content': [
                         {
                             'component': 'VCardTitle',
-                            'props': {'class': 'd-flex align-center justify-space-between'},
-                            'content': [
-                                {
-                                    'component': 'span',
-                                    'props': {'class': 'text-h6'},
-                                    'text': f'📊 {account_name} 签到历史'
-                                },
-                                {
-                                    'component': 'button',
-                                    'props': {
-                                        'class': 'v-btn v-btn--variant-text v-btn--size-small text-error',
-                                        'onclick': f"if(confirm('确定删除 {account_name} 的签到历史记录吗？此操作不可恢复。')) fetch('/plugin/hdhivesign/delete_history', {{method:'POST', headers:{{'Content-Type':'application/json'}}, body: JSON.stringify({{account_index: {i}}})}}).then(() => location.reload());"
-                                    },
-                                    'text': '删除历史'
-                                }
-                            ]
+                            'props': {'class': 'text-h6'},
+                            'text': f'📊 {account_name} 签到历史'
                         },
                         {
                             'component': 'VCardText',
@@ -1456,76 +1438,24 @@ class HdhiveSign(_PluginBase):
                             }]
                         }
                     ]
-                }
+                }]
             else:
-                history_card = {
-                    'component': 'VCard',
-                    'props': {'variant': 'outlined', 'class': 'mb-4'},
-                    'content': [
-                        {
-                            'component': 'VCardTitle',
-                            'props': {'class': 'd-flex align-center justify-space-between'},
-                            'content': [
-                                {
-                                    'component': 'span',
-                                    'props': {'class': 'text-h6'},
-                                    'text': f'📊 {account_name} 签到历史'
-                                },
-                                {
-                                    'component': 'button',
-                                    'props': {
-                                        'class': 'v-btn v-btn--variant-text v-btn--size-small text-error',
-                                        'onclick': f"if(confirm('确定删除 {account_name} 的签到历史记录吗？此操作不可恢复。')) fetch('/plugin/hdhivesign/delete_history', {{method:'POST', headers:{{'Content-Type':'application/json'}}, body: JSON.stringify({{account_index: {i}}})}}).then(() => location.reload());"
-                                    },
-                                    'text': '删除历史'
-                                }
-                            ]
-                        },
-                        {
-                            'component': 'VCardText',
-                            'content': [{
-                                'component': 'VAlert',
-                                'props': {
-                                    'type': 'info', 'variant': 'tonal',
-                                    'text': f'{account_name} 暂无签到记录，请等待下一次自动签到或手动触发一次。',
-                                }
-                            }]
-                        }
-                    ]
-                }
+                history_table = [{
+                    'component': 'VAlert',
+                    'props': {
+                        'type': 'info', 'variant': 'tonal',
+                        'text': f'{account_name} 暂无签到记录，请等待下一次自动签到或手动触发一次。',
+                        'class': 'mb-4'
+                    }
+                }]
             
             content.extend(info_card)
-            content.append(history_card)
+            content.extend(history_table)
         
         return content
 
     def get_api(self) -> List[Dict[str, Any]]:
-        return [{
-            "path": "/delete_history",
-            "endpoint": self.delete_history,
-            "method": "POST"
-        }]
-
-    async def delete_history(self, request: Request) -> Dict[str, Any]:
-        """
-        删除指定账户的签到历史记录
-        """
-        try:
-            data = await request.json()
-            account_index = data.get("account_index")
-            if account_index is None:
-                return {"success": False, "message": "缺少account_index参数"}
-            account_index = int(account_index)
-            if 0 <= account_index < len(self._accounts):
-                history_key = f'sign_history_{account_index}'
-                self.save_data(history_key, [])
-                logger.info(f"已删除账户索引 {account_index} 的签到历史记录")
-                return {"success": True, "message": f"账户{account_index+1}的历史记录已删除"}
-            else:
-                return {"success": False, "message": "无效的账户索引"}
-        except Exception as e:
-            logger.error(f"删除历史记录失败: {str(e)}", exc_info=True)
-            return {"success": False, "message": str(e)}
+        return []
 
     def stop_service(self):
         """
