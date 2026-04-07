@@ -1,6 +1,6 @@
 """
 影巢签到插件
-版本: 1.4.1
+版本: 1.4.2
 作者: madrays
 功能:
 - 自动完成影巢(HDHive)每日签到
@@ -12,6 +12,7 @@
 - 仅支持Cookie登录方式
 
 修改记录:
+- v1.4.2: 增加指定账户签到历史记录清空按钮和对应API
 - v1.4.1: 去除账号密码登录方式，仅保留Cookie登录，简化配置
 - v1.4.0: 添加多账户支持，每个账户独立配置和记录
 - v1.3.0: 域名改为可配置，统一API拼接(Referer/Origin/接口)，精简日志
@@ -56,7 +57,7 @@ class HdhiveSign(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/madrays/MoviePilot-Plugins/main/icons/hdhive.ico"
     # 插件版本
-    plugin_version = "1.4.1"
+    plugin_version = "1.4.2"
     # 插件作者
     plugin_author = "madrays"
     # 作者主页
@@ -1411,8 +1412,31 @@ class HdhiveSign(_PluginBase):
                     'content': [
                         {
                             'component': 'VCardTitle',
-                            'props': {'class': 'text-h6'},
-                            'text': f'📊 {account_name} 签到历史'
+                            'props': {'class': 'd-flex align-center justify-space-between'},
+                            'content': [
+                                {
+                                    'component': 'div',
+                                    'content': [
+                                        {
+                                            'component': 'span',
+                                            'props': {'class': 'text-h6'},
+                                            'text': f'📊 {account_name} 签到历史'
+                                        }
+                                    ]
+                                },
+                                {
+                                    'component': 'VBtn',
+                                    'props': {
+                                        'color': 'error',
+                                        'size': 'small',
+                                        'variant': 'outlined',
+                                        'title': '点击清空历史数据，随后需手动刷新该页面',
+                                        'href': f'/api/plugin/hdhivesign/clear_history?account_index={i}',
+                                        'target': '_blank'
+                                    },
+                                    'text': '🗑️ 清空记录'
+                                }
+                            ]
                         },
                         {
                             'component': 'VCardText',
@@ -1455,7 +1479,43 @@ class HdhiveSign(_PluginBase):
         return content
 
     def get_api(self) -> List[Dict[str, Any]]:
-        return []
+        """
+        向系统注册 API 端点
+        """
+        return [{
+            "path": "/clear_history",
+            "endpoint": self.clear_history_api,
+            "methods": ["GET"],
+            "summary": "清理指定账户的签到历史记录"
+        }]
+
+    def clear_history_api(self, account_index: int = 0):
+        """
+        清理历史记录的API处理函数
+        """
+        try:
+            from fastapi.responses import HTMLResponse
+            self.save_data(f'sign_history_{account_index}', [])
+            html_content = f"""
+            <html>
+                <head>
+                    <meta charset="utf-8">
+                    <title>清理成功</title>
+                    <script>
+                        alert('账户 {account_index + 1} 历史记录已成功清空！\\n请关闭此页面并刷新插件页面查看。');
+                        window.close();
+                    </script>
+                </head>
+                <body>
+                    <h2 style="text-align: center; margin-top: 50px;">历史记录已清空</h2>
+                    <p style="text-align: center;">您可以关闭此标签页并手动刷新插件管理页面。</p>
+                </body>
+            </html>
+            """
+            return HTMLResponse(content=html_content)
+        except Exception as e:
+            logger.error(f"清理历史记录失败: {str(e)}")
+            return {"success": False, "message": f"清理失败: {str(e)}"}
 
     def stop_service(self):
         """
