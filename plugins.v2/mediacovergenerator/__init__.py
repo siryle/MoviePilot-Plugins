@@ -1721,34 +1721,34 @@ class MediaCoverGenerator(_PluginBase):
         font_size = (float(zh_font_size), float(en_font_size))
 
         # 获取媒体总数用于角标
-        badge_number = 0  # 默认值
+        badge_number = 0
+        badge_params = {}
         if self._badge_enabled:
             badge_number = self.__get_media_count(server, library_name)
-            # 如果获取失败，设置为0，但仍然显示角标
             if badge_number is None:
                 badge_number = 0
             logger.info(f"媒体库 {library_name} 的媒体总数: {badge_number}")
 
-        # 准备角标参数
-        badge_params = {}
-        if self._badge_enabled:
             # 计算角标文字颜色（如果用户没有指定，则自动计算）
             badge_text_color = self._badge_text_color
             if not badge_text_color:
                 badge_text_color = self.__calculate_contrast_color(self._badge_color)
             
-            # 确保内边距为整数，并应用到所有方向
-            badge_padding = int(self._badge_padding) if self._badge_padding else 50
+            # 确保内边距为整数
+            badge_padding = int(self._badge_padding) if self._badge_padding else 30
             
             badge_params = {
                 'badge_number': badge_number,
                 'badge_font_path': str(self._badge_font_path) if self._badge_font_path else None,
-                'badge_font_size': float(self._badge_font_size) if self._badge_font_size else 1.0,
+                'badge_font_size': float(self._badge_font_size) if self._badge_font_size else 2.0,
                 'badge_position': self._badge_position,
                 'badge_color': self._badge_color,
-                'badge_text_color': badge_text_color,  # 新增：计算出的文字颜色
-                'badge_padding': badge_padding  # 确保是整数
+                'badge_text_color': badge_text_color,
+                'badge_padding': badge_padding
             }
+            logger.info(f"角标参数: number={badge_number}, font_path={self._badge_font_path}, "
+                       f"font_size={self._badge_font_size}, position={self._badge_position}, "
+                       f"color={self._badge_color}, text_color={badge_text_color}, padding={badge_padding}")
 
         if self._cover_style == 'single_1':
             image_data = create_style_single_1(image_path, title, font_path, 
