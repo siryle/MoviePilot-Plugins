@@ -20,9 +20,9 @@
 - v1.0.0: 初始版本，基于影巢网站结构实现自动签到
 """
 import time
-import requests
 import re
 import json
+import urllib.parse
 from datetime import datetime, timedelta
 from typing import Any, List, Dict, Tuple, Optional, Union
 
@@ -40,6 +40,13 @@ from app.utils.http import RequestUtils
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# 动态加载 curl_cffi 以绕过 WAF，如果未安装则回退使用原生 requests
+try:
+    from curl_cffi import requests
+    HAS_CURL_CFFI = True
+except ImportError:
+    import requests
+    HAS_CURL_CFFI = False
 
 class HdhiveSign(_PluginBase):
     # 插件名称
@@ -419,13 +426,26 @@ class HdhiveSign(_PluginBase):
 
     def _parse_cookie(self, cookie_str: str) -> Dict[str, str]:
         """
-        解析Cookie字符串为字典
+        解析Cookie字符串为字典，清理多余字符和编码以防止后端JWT解析失败
         """
         cookies = {}
         if cookie_str:
             for cookie_item in cookie_str.split(';'):
                 if '=' in cookie_item:
                     name, value = cookie_item.strip().split('=', 1)
+                    value = value.strip()
+                    
+                    # 1. 过滤双引号 (复制Cookie时易混入引号导致Token失效)
+                    if value.startswith('"') and value.endswith('"'):
+                        value = value[1:-1]
+                        
+                    # 2. URL 解码 (将 %3D 等安全字符还原，防止 JWT Parse 报错)
+                    value = urllib.parse.unquote(value)
+                    
+                    # 3. 过滤可能的 Bearer 前缀
+                    if name == 'token' and value.startswith('Bearer '):
+                        value = value[7:].strip()
+                        
                     cookies[name] = value
         return cookies
 
@@ -468,14 +488,19 @@ class HdhiveSign(_PluginBase):
             if csrf_token:
                 headers['x-csrf-token'] = csrf_token
 
-            signin_res = requests.post(
-                url=self._signin_api,
-                headers=headers,
-                cookies=cookies,
-                proxies=proxies,
-                timeout=30,
-                verify=False
-            )
+            # 构建请求参数，如果环境支持 curl_cffi 则模拟浏览器指纹防止 WAF 拦截
+            req_kwargs = {
+                "url": self._signin_api,
+                "headers": headers,
+                "cookies": cookies,
+                "proxies": proxies,
+                "timeout": 30,
+                "verify": False
+            }
+            if HAS_CURL_CFFI:
+                req_kwargs["impersonate"] = "chrome"
+
+            signin_res = requests.post(**req_kwargs)
 
             if signin_res is None:
                 return False, '签到请求失败，响应为空，请检查代理或网络环境'
@@ -567,7 +592,19 @@ class HdhiveSign(_PluginBase):
                 'Referer': referer,
                 'Authorization': f'Bearer {token}',
             }
-            resp = requests.get(self._user_info_api, headers=headers, cookies=cookies, proxies=settings.PROXY, timeout=30, verify=False)
+            
+            req_kwargs = {
+                "url": self._user_info_api,
+                "headers": headers,
+                "cookies": cookies,
+                "proxies": settings.PROXY,
+                "timeout": 30,
+                "verify": False
+            }
+            if HAS_CURL_CFFI:
+                req_kwargs["impersonate"] = "chrome"
+
+            resp = requests.get(**req_kwargs)
             logger.info(f"拉取用户信息 API 状态码: {getattr(resp,'status_code','unknown')}")
             data = {}
             try:
@@ -599,15 +636,27 @@ class HdhiveSign(_PluginBase):
                         'rsc': '1',
                     }
                     rsc_url = referer
-                    rsc_resp = requests.get(rsc_url, headers=rsc_headers, cookies=cookies, proxies=settings.PROXY, timeout=30, verify=False)
+                    
+                    rsc_kwargs = {
+                        "url": rsc_url,
+                        "headers": rsc_headers,
+                        "cookies": cookies,
+                        "proxies": settings.PROXY,
+                        "timeout": 30,
+                        "verify": False
+                    }
+                    if HAS_CURL_CFFI:
+                        rsc_kwargs["impersonate"] = "chrome"
+
+                    rsc_resp = requests.get(**rsc_kwargs)
                     logger.info(f"RSC 用户页状态码: {getattr(rsc_resp,'status_code','unknown')}")
                     rsc_text = rsc_resp.text or ''
-                    import re as _re
-                    m_nick = _re.search(r'"nickname":"([^"]+)"', rsc_text)
-                    m_points = _re.search(r'"points":(\d+)', rsc_text)
-                    m_days = _re.search(r'"signin_days_total":(\d+)', rsc_text)
-                    m_avatar = _re.search(r'"avatar_url":"([^"]+)"', rsc_text)
-                    m_created = _re.search(r'"created_at":"([^"]+)"', rsc_text)
+                    
+                    m_nick = re.search(r'"nickname":"([^"]+)"', rsc_text)
+                    m_points = re.search(r'"points":(\d+)', rsc_text)
+                    m_days = re.search(r'"signin_days_total":(\d+)', rsc_text)
+                    m_avatar = re.search(r'"avatar_url":"([^"]+)"', rsc_text)
+                    m_created = re.search(r'"created_at":"([^"]+)"', rsc_text)
                     if m_nick:
                         info['nickname'] = m_nick.group(1)
                     if m_points:
