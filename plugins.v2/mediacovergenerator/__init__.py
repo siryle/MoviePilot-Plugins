@@ -47,7 +47,7 @@ class MediaCoverGenerator(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/siryle/MoviePilot-Plugins/main/icons/emby.png"
     # 插件版本
-    plugin_version = "1.9.1"  # 更新版本号
+    plugin_version = "1.9.2"  # 更新版本号
     # 插件作者
     plugin_author = "justzerock,deepseek"
     # 作者主页
@@ -1706,6 +1706,42 @@ class MediaCoverGenerator(_PluginBase):
         
         return images if images else None  # 或改为 return images if images else False
 
+    def __get_user_id(self, service) -> Optional[str]:
+        """
+        获取媒体服务器当前用户的ID
+        :param service: 媒体服务器服务对象
+        :return: 用户ID，获取失败返回None
+        """
+        # 缓存用户ID，避免重复请求
+        cache_key = f"user_id_{service.name}"
+        if hasattr(self, '_user_id_cache') and cache_key in self._user_id_cache:
+            return self._user_id_cache[cache_key]
+        
+        try:
+            # Emby/Jellyfin 获取用户列表的API
+            if service.type == 'emby':
+                url = f'[HOST]emby/Users?api_key=[APIKEY]'
+            else:  # jellyfin
+                url = f'[HOST]Users?api_key=[APIKEY]'
+            
+            res = service.instance.get_data(url=url)
+            if res and res.status_code == 200:
+                users = res.json()
+                # 通常取第一个用户（当前API Key对应的用户）
+                if users and len(users) > 0:
+                    user_id = users[0].get('Id')
+                    if user_id:
+                        # 缓存
+                        if not hasattr(self, '_user_id_cache'):
+                            self._user_id_cache = {}
+                        self._user_id_cache[cache_key] = user_id
+                        logger.info(f"获取到媒体服务器 {service.name} 的用户ID: {user_id}")
+                        return user_id
+            logger.warning(f"无法获取媒体服务器 {service.name} 的用户ID")
+        except Exception as e:
+            logger.error(f"获取用户ID失败: {str(e)}")
+        return None
+
     def __generate_image_from_path(self, server, library_name, title, image_path=None):
         logger.info(f"媒体库 {server}：{library_name} 正在生成封面图...")
         font_path = (str(self._zh_font_path), str(self._en_font_path))
@@ -1721,34 +1757,34 @@ class MediaCoverGenerator(_PluginBase):
         font_size = (float(zh_font_size), float(en_font_size))
 
         # 获取媒体总数用于角标
-        badge_number = 0
-        badge_params = {}
+        badge_number = 0  # 默认值
         if self._badge_enabled:
             badge_number = self.__get_media_count(server, library_name)
+            # 如果获取失败，设置为0，但仍然显示角标
             if badge_number is None:
                 badge_number = 0
             logger.info(f"媒体库 {library_name} 的媒体总数: {badge_number}")
 
+        # 准备角标参数
+        badge_params = {}
+        if self._badge_enabled:
             # 计算角标文字颜色（如果用户没有指定，则自动计算）
             badge_text_color = self._badge_text_color
             if not badge_text_color:
                 badge_text_color = self.__calculate_contrast_color(self._badge_color)
             
-            # 确保内边距为整数
-            badge_padding = int(self._badge_padding) if self._badge_padding else 30
+            # 确保内边距为整数，并应用到所有方向
+            badge_padding = int(self._badge_padding) if self._badge_padding else 50
             
             badge_params = {
                 'badge_number': badge_number,
                 'badge_font_path': str(self._badge_font_path) if self._badge_font_path else None,
-                'badge_font_size': float(self._badge_font_size) if self._badge_font_size else 2.0,
+                'badge_font_size': float(self._badge_font_size) if self._badge_font_size else 1.0,
                 'badge_position': self._badge_position,
                 'badge_color': self._badge_color,
-                'badge_text_color': badge_text_color,
-                'badge_padding': badge_padding
+                'badge_text_color': badge_text_color,  # 新增：计算出的文字颜色
+                'badge_padding': badge_padding  # 确保是整数
             }
-            logger.info(f"角标参数: number={badge_number}, font_path={self._badge_font_path}, "
-                       f"font_size={self._badge_font_size}, position={self._badge_position}, "
-                       f"color={self._badge_color}, text_color={badge_text_color}, padding={badge_padding}")
 
         if self._cover_style == 'single_1':
             image_data = create_style_single_1(image_path, title, font_path, 
@@ -1822,114 +1858,82 @@ class MediaCoverGenerator(_PluginBase):
 
     def __get_media_count(self, server_name, library_name):
         """
-        获取指定媒体库的媒体总数
+        获取指定媒体库的媒体总数（带UserId参数）
         """
         try:
-            # 查找对应的服务器和媒体库
             service = self._servers.get(server_name)
             if not service:
                 logger.warning(f"找不到服务器: {server_name}")
                 return None
                 
-            # 获取所有媒体库
             libraries = self.__get_server_libraries(service)
             library = None
-            
-            # 查找指定名称的媒体库
             for lib in libraries:
                 if lib.get('Name') == library_name:
                     library = lib
                     break
-                    
             if not library:
                 logger.warning(f"找不到媒体库: {library_name}")
                 return None
-            
-            # 首先尝试从库信息中直接获取数量（Emby/Jellyfin提供）
-            # 音乐库通常有SongCount字段
+
+            # 获取用户ID
+            user_id = self.__get_user_id(service)
+            user_param = f"&UserId={user_id}" if user_id else ""
+
             if library.get('CollectionType') == 'music':
-                # 尝试从库信息获取SongCount
+                # 尝试从库信息获取SongCount（无需UserId）
                 song_count = library.get('SongCount')
                 if song_count is not None:
                     logger.info(f"音乐库 {library_name} 的歌曲数量（从库信息）: {song_count}")
                     return song_count
-            
-            # 获取媒体库ID
+
             if service.type == 'emby':
                 library_id = library.get("Id")
             else:
                 library_id = library.get("ItemId")
-            
-            # 尝试获取媒体数量
-            
-            # 方法1：直接查询库中的项目数量
-            try:
-                # 根据库类型设置查询参数
-                collection_type = library.get('CollectionType')
-                
-                if collection_type == 'music':
-                    # 音乐库 - 查询歌曲数量
-                    if service.type == 'emby':
-                        url = f'[HOST]emby/Items/?api_key=[APIKEY]' \
-                            f'&ParentId={library_id}&Recursive=True' \
-                            f'&IncludeItemTypes=Audio' \
-                            f'&Limit=1'
-                    else:
-                        url = f'[HOST]Items/?api_key=[APIKEY]' \
-                            f'&ParentId={library_id}&Recursive=True' \
-                            f'&IncludeItemTypes=Audio' \
-                            f'&Limit=1'
-                else:
-                    # 其他类型库
-                    if service.type == 'emby':
-                        url = f'[HOST]emby/Items/?api_key=[APIKEY]' \
-                            f'&ParentId={library_id}&Recursive=True' \
-                            f'&IncludeItemTypes=Movie,Series,MusicAlbum,MusicArtist,Audio' \
-                            f'&Limit=1'
-                    else:
-                        url = f'[HOST]Items/?api_key=[APIKEY]' \
-                            f'&ParentId={library_id}&Recursive=True' \
-                            f'&IncludeItemTypes=Movie,Series,MusicAlbum,MusicArtist,Audio' \
-                            f'&Limit=1'
-                
+
+            # 构建查询URL，添加UserId参数
+            collection_type = library.get('CollectionType')
+            if collection_type == 'music':
+                # 音乐库 - 查询歌曲数量
+                url = f'[HOST]emby/Items/?api_key=[APIKEY]' \
+                      f'&ParentId={library_id}&Recursive=True' \
+                      f'&IncludeItemTypes=Audio&Limit=1{user_param}'
+            else:
+                url = f'[HOST]emby/Items/?api_key=[APIKEY]' \
+                      f'&ParentId={library_id}&Recursive=True' \
+                      f'&IncludeItemTypes=Movie,Series,MusicAlbum,MusicArtist,Audio' \
+                      f'&Limit=1{user_param}'
+
+            # 兼容Jellyfin的路径
+            if service.type != 'emby':
+                url = url.replace('/emby/', '/')
+
+            res = service.instance.get_data(url=url)
+            if res and res.status_code == 200:
+                total_record_count = int(res.headers.get('X-Total-Record-Count', 0))
+                if total_record_count == 0:
+                    data = res.json()
+                    total_record_count = data.get('TotalRecordCount', 0)
+                if total_record_count > 0:
+                    logger.info(f"通过查询获取到媒体库 {library_name} 的数量: {total_record_count}")
+                    return total_record_count
+
+            # 备用方法：获取库详情
+            if service.type == 'emby':
+                url = f'[HOST]emby/Items/{library_id}?api_key=[APIKEY]{user_param}'
                 res = service.instance.get_data(url=url)
-                
                 if res and res.status_code == 200:
                     data = res.json()
-                    # 从响应头获取总数量
-                    total_record_count = int(res.headers.get('X-Total-Record-Count', 0))
-                    
-                    if total_record_count == 0:
-                        # 尝试从JSON响应中获取
-                        total_record_count = data.get('TotalRecordCount', 0)
-                    
-                    if total_record_count > 0:
-                        logger.info(f"通过查询获取到媒体库 {library_name} 的数量: {total_record_count}")
-                        return total_record_count
-            except Exception as e:
-                logger.warning(f"获取媒体数量失败: {str(e)}")
-            
-            # 方法2：对于Emby，可以尝试获取库的详细信息
-            try:
-                if service.type == 'emby':
-                    url = f'[HOST]emby/Items/{library_id}?api_key=[APIKEY]'
-                    res = service.instance.get_data(url=url)
-                    
-                    if res and res.status_code == 200:
-                        data = res.json()
-                        # 尝试获取各种可能的数量字段
-                        count_fields = ['SongCount', 'ChildCount', 'RecursiveItemCount']
-                        for field in count_fields:
-                            if field in data:
-                                count = data[field]
-                                logger.info(f"从库详情中获取到 {library_name} 的 {field}: {count}")
-                                return count
-            except Exception as e:
-                logger.warning(f"获取库详情失败: {str(e)}")
-            
+                    for field in ['SongCount', 'ChildCount', 'RecursiveItemCount']:
+                        if field in data:
+                            count = data[field]
+                            logger.info(f"从库详情中获取到 {library_name} 的 {field}: {count}")
+                            return count
+
             logger.warning(f"无法获取媒体库 {library_name} 的媒体数量")
             return 0
-            
+
         except Exception as err:
             logger.error(f"获取媒体数量失败: {str(err)}")
             return None
